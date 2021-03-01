@@ -11,6 +11,7 @@ NAK_CODE = ord('N')  # 0x4E 78
 
 
 def _repr_hex(value):
+    # return ' '.join(f'{x:02x}:{x}' for x in value)
     return ' '.join(f'{x:02x}' for x in value)
 
 

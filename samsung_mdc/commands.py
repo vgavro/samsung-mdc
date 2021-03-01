@@ -23,6 +23,9 @@ class _CommandMeta(type):
     def __new__(mcs, name, bases, dict):
         if 'name' not in dict:
             dict['name'] = name.lower()
+
+        if 'DATA' not in dict and bases:
+            dict['DATA'] = bases[0].DATA
         dict['DATA'] = [
             x if isinstance(x, Field) else Field(x)
             for x in dict['DATA']
@@ -30,6 +33,11 @@ class _CommandMeta(type):
         cls = type.__new__(mcs, name, bases, dict)
         MDCConnection.register_command(cls)
         return cls
+
+
+class DAY_PART(Enum):
+    AM = 0x01
+    PM = 0x00
 
 
 class SERIAL_NUMBER(metaclass=_CommandMeta):
@@ -287,19 +295,15 @@ class AUTO_LAMP(metaclass=_CommandMeta):
     CMD = 0x57
     GET, SET = True, True
 
-    class AUTO_LAMP_DAY_PART(Enum):
-        AM = 1
-        PM = 0
-
     DATA = [
         Field(int, 'AUTO_LAMP_MAX_HOUR', range(1, 13)),
         Field(int, 'AUTO_LAMP_MAX_MINUTE', range(60)),
-        Field(AUTO_LAMP_DAY_PART, 'AUTO_LAMP_MAX_DAY_PART'),
+        Field(DAY_PART, 'AUTO_LAMP_MAX_DAY_PART'),
         Field(int, 'AUTO_LAMP_MAX_VALUE', range(101)),
 
         Field(int, 'AUTO_LAMP_MIN_HOUR', range(1, 13)),
         Field(int, 'AUTO_LAMP_MIN_MINUTE', range(60)),
-        Field(AUTO_LAMP_DAY_PART, 'AUTO_LAMP_MIN_DAY_PART'),
+        Field(DAY_PART, 'AUTO_LAMP_MIN_DAY_PART'),
         Field(int, 'AUTO_LAMP_MIN_VALUE', range(101)),
     ]
 
@@ -365,6 +369,83 @@ class OSD_TYPE(metaclass=_CommandMeta):
         )
 
 
+class TIMER_REPEAT(Enum):
+    ONCE = 0x00
+    EVERYDAY = 0x01
+    MON_FRI = 0x02
+    MON_SAT = 0x03
+    SAT_SUN = 0x04
+    MANUAL_WEEKDAY = 0x05
+
+
+class HOLIDAY_APPLY(Enum):
+    DONT_APPLY_BOTH = 0x00
+    APPLY_BOTH = 0x01
+    ON_TIMER_ONLY_APPLY = 0x02
+    OFF_TIMER_ONLY_APPLY = 0x03
+
+
+class TIMER_15_1(metaclass=_CommandMeta):
+    """
+    Integrated timer function (15 parameters version).
+
+    Note: This depends on product and will not work on older versions.
+    """
+    CMD = 0xA4
+    GET, SET = True, True
+
+    DATA = [
+        Field(int, 'ON_HOUR', range(1, 13)),
+        Field(int, 'ON_MINUTE', range(60)),
+        Field(DAY_PART, 'ON_DAY_PART'),
+        Field(bool, 'ON_ACT'),
+
+        Field(int, 'OFF_HOUR', range(1, 13)),
+        Field(int, 'OFF_MINUTE', range(60)),
+        Field(DAY_PART, 'OFF_DAY_PART'),
+        Field(bool, 'OFF_ACT'),
+
+        Field(TIMER_REPEAT, 'REPEAT_ON'),
+        # TODO: implement bitmask field
+        Field(int, 'MANUAL_WEEKDAY_ON'),
+
+        Field(TIMER_REPEAT, 'REPEAT_OFF'),
+        Field(int, 'MANUAL_WEEKDAY_OFF'),
+
+        VOLUME.VOLUME_INT,
+        INPUT_SOURCE.INPUT_SOURCE_STATE,
+        HOLIDAY_APPLY,
+    ]
+
+
+class TIMER_15_2(TIMER_15_1):
+    CMD = 0xA5
+
+
+class TIMER_15_3(TIMER_15_1):
+    CMD = 0xA6
+
+
+class TIMER_13_1(TIMER_15_1):
+    """
+    Integrated timer function (13 parameters version).
+
+    Note: This depends on product and will not work on newer versions.
+    """
+    DATA = [
+        f for f in TIMER_15_1.DATA
+        if f.name not in ('REPEAT_OFF', 'MANUAL_WEEKDAY_OFF')
+    ]
+
+
+class TIMER_13_2(TIMER_13_1):
+    CMD = 0xA5
+
+
+class TIMER_13_3(TIMER_13_1):
+    CMD = 0xA6
+
+
 class RESET(metaclass=_CommandMeta):
     CMD = 0x9F
     GET, SET = False, True
@@ -384,7 +465,7 @@ class VIRTUAL_REMOTE(metaclass=_CommandMeta):
     This function support that MDC command can work same as remote control.
 
     Note: In a certain model, 0x79 content key works as Home
-    and 0x1f Display key works as Info
+    and 0x1f Display key works as Info.
     """
     CMD = 0xB0
     GET, SET = False, True

@@ -77,7 +77,7 @@ class EnumChoice(click.ParamType):
             if value in [v.value for v in self.enum]:
                 return value
         missing_message = self.get_missing_message(param)
-        self.fail(f"invalid choice: {value}\n{missing_message}")
+        self.fail(f"Invalid choice: {value}\n{missing_message}")
 
     def __repr__(self):
         return f"EnumChoice({self.enum})"
@@ -221,6 +221,13 @@ class MDCCommand(ArgumentWithHelpCommandMixin, click.Command):
             super().parse_args(ctx, args)
         except click.UsageError as exc:
             exc.cmd = None
+
+            # Avoid parameters validation on GET-only commands
+            if not self.mdc_meta.SET:
+                exc = click.UsageError('Readonly command doesn\'t accept '
+                                       'any arguments', ctx)
+                exc.cmd = None
+                raise exc
             raise
 
 
@@ -304,6 +311,11 @@ def register_command(command):
     def _cmd(ctx, **kwargs):
         call_args = tuple(kwargs.values())
         call_args = [call_args] if call_args else []
+
+        if call_args and not command.meta.SET:
+            raise click.UsageError('Readonly command doesn\'t accept '
+                                   'any arguments')
+
         targets = [(
             display_id, ip, port, partial(
                 command,
