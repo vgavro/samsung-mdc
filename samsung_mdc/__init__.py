@@ -124,7 +124,7 @@ class MDCConnection:
                 rv.append(value)
         if len(data) != len(rv) and not data_format[-1].type is str:
             raise MDCResponseError('Unexpected data length', data)
-        return rv
+        return tuple(rv)
 
     @staticmethod
     def _pack_payload_data(data, data_format):

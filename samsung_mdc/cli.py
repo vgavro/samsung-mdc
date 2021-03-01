@@ -117,9 +117,11 @@ class Group(ArgumentWithHelpCommandMixin, click.Group):
         # This is needed to be able to do "--help COMMAND"
         # without group required arguments
         def show_help(ctx, param, value):
+            print('showing', value, ctx.resilient_parsing)
             if value and not ctx.resilient_parsing:
                 # Match registered commands and show help for all of them
                 from sys import argv
+                print('parsing')
                 commands = [
                     ctx.command.commands[name]
                     for name in argv[1:]
@@ -315,10 +317,10 @@ def register_command(command):
 
         async def print_call(display_id, ip, port, call):
             try:
-                print(f'{display_id}@{ip}:{port}:', await call(*call_args))
+                print(f'{display_id}@{ip}:{port}', await call(*call_args))
             except Exception as exc:
                 failed_targets.append((display_id, ip, port, call))
-                print(f'{display_id}@{ip}:{port}:',
+                print(f'{display_id}@{ip}:{port}',
                       f'{exc.__class__.__name__}: {exc}')
                 if ctx.obj['verbose']:
                     raise
