@@ -303,11 +303,13 @@ def register_command(command):
                 display_id
             )) for display_id, ip, port in ctx.obj['targets']
         ]
+        failed_targets = []
 
         async def print_call(display_id, ip, port, call):
             try:
                 print(f'{display_id}@{ip}:{port}:', await call(*call_args))
             except Exception as exc:
+                failed_targets.append((display_id, ip, port, call))
                 print(f'{display_id}@{ip}:{port}:',
                       f'{exc.__class__.__name__}: {exc}')
                 if ctx.obj['verbose']:
@@ -319,6 +321,10 @@ def register_command(command):
             for target in targets
         ]))
         loop.close()
+
+        if failed_targets:
+            print('Failed targets:', len(failed_targets))
+            ctx.exit(1)
 
     cli.command(cls=MDCCommand, mdc_meta=command.meta)(_cmd)
 
