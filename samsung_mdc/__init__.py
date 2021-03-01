@@ -88,12 +88,6 @@ class MDCConnection:
         ack, rcmd, data = resp[4], resp[5], resp[6:-1]
         if ack not in (ACK_CODE, NAK_CODE):
             raise MDCResponseError('Unexpected ACK/NAK', resp)
-        # if self.verbose:
-        #     print(f'{self.ip}:{self.port}', 'Resp',
-        #           chr(ack), _repr_hex([rcmd]), _repr_hex(data))
-
-        # if not ack and raise_on_nak:
-        #     raise NAKResponseError('Negative Acknowledgement', rcmd, data)
 
         return (ack == ACK_CODE, rcmd,
                 data[1:] if (ack == ACK_CODE and subcmd is not None) else data)
@@ -105,10 +99,14 @@ class MDCConnection:
         await writer.wait_closed()
 
     @staticmethod
-    def _parse_response(response, data_format, strict_enum=True):
+    def parse_response(response):
         ack, rcmd, data = response
         if not ack:
             raise NAKError(data[0])
+        return data
+
+    @staticmethod
+    def parse_response_data(data_format, data, strict_enum=True):
         rv = []
         for i, field in enumerate(data_format):
             if field.type is str:
@@ -127,7 +125,7 @@ class MDCConnection:
         return tuple(rv)
 
     @staticmethod
-    def _pack_payload_data(data, data_format):
+    def pack_payload_data(data_format, data):
         rv = bytes()
         for i, field in enumerate(data_format):
             if field.type is str:
@@ -142,16 +140,23 @@ class MDCConnection:
 
     @classmethod
     def register_command(cls, meta):
+        pack_payload_data = getattr(
+            meta, 'pack_payload_data',
+            partial(cls.pack_payload_data, meta.DATA))
+        parse_response_data = getattr(
+            meta, 'parse_response_data',
+            partial(cls.parse_response_data, meta.DATA))
+
         async def command(self, id, data):
-            return self._parse_response(
+            data = self.parse_response(
                 await self.send(
                     (meta.CMD, meta.SUBCMD)
                     if hasattr(meta, 'SUBCMD') else meta.CMD,
                     id,
-                    self._pack_payload_data(data, meta.DATA) if data else []
+                    pack_payload_data(data) if data else []
                 ),
-                meta.DATA
             )
+            return parse_response_data(data)
         if meta.GET:
             command.__defaults__ = (b'',)
         if not meta.SET or not meta.DATA:

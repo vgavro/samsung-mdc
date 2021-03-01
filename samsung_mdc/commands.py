@@ -3,6 +3,13 @@ from enum import Enum
 from . import MDCConnection
 
 
+def _bit_unmask(val, length=None):
+    rv = tuple(reversed(tuple(int(x) for x in tuple('{0:0b}'.format(val)))))
+    if length and len(rv) < length:
+        return rv + ((0,) * (length - len(rv)))
+    return rv
+
+
 class Field:
     def __init__(self, type, name=None, range=None):
         self.type, self.name, self.range = (
@@ -121,17 +128,17 @@ class INPUT_SOURCE(metaclass=_CommandMeta):
         MEDIA_MAGIC_INFO_S = 0x60
         WIDI_SCREEN_MIRRORING = 0x61
         INTERNAL_USB = 0x62
-        URL_LAUCHER = 0x63
+        URL_LAUNCHER = 0x63
         IWB = 0x64
 
     DATA = [INPUT_SOURCE_STATE]
 
 
-class PICTURE_SIZE(metaclass=_CommandMeta):
+class PICTURE_ASPECT(metaclass=_CommandMeta):
     CMD = 0x15
     GET, SET = True, True
 
-    class ASPECT_STATE(Enum):
+    class PICTURE_ASPECT_STATE(Enum):
         PC_16_9 = 0x10
         PC_4_3 = 0x18
         PC_ORIGINAL_RATIO = 0x20
@@ -151,7 +158,7 @@ class PICTURE_SIZE(metaclass=_CommandMeta):
         VIDEO_WIDE_ZOOM = 0x31
         VIDEO_21_9 = 0x32
 
-    DATA = [ASPECT_STATE]
+    DATA = [PICTURE_ASPECT_STATE]
 
 
 class MDC_CONNECTION(metaclass=_CommandMeta):
@@ -325,6 +332,39 @@ class MODEL_NAME(metaclass=_CommandMeta):
     DATA = [Field(str, 'MODEL_NAME')]
 
 
+class OSD(metaclass=_CommandMeta):
+    CMD = 0x70
+    GET, SET = True, True
+
+    class OSD_STATE(Enum):
+        OFF = 0x00
+        ON = 0x01
+
+    DATA = [OSD_STATE]
+
+
+class OSD_TYPE(metaclass=_CommandMeta):
+    CMD = 0xA3
+    GET, SET = True, True
+
+    class OSD_TYPE(Enum):
+        SOURCE = 0x00
+        NOT_OPTIMUM_MODE = 0x01
+        NO_SIGNAL = 0x02
+        MDC = 0x03
+        SCHEDULE_CHANNEL = 0x04
+
+    DATA = [OSD_TYPE, OSD.OSD_STATE]
+
+    @classmethod
+    def parse_response_data(cls, data):
+        return tuple(
+            (cls.OSD_TYPE(i), OSD.OSD_STATE(x))
+            for i, x in enumerate(_bit_unmask(data[0],
+                                  length=len(cls.OSD_TYPE)))
+        )
+
+
 class RESET(metaclass=_CommandMeta):
     CMD = 0x9F
     GET, SET = False, True
@@ -455,6 +495,6 @@ class STATUS(metaclass=_CommandMeta):
     GET, SET = True, False
     DATA = [
         POWER.POWER_STATE, VOLUME.VOLUME_INT, MUTE.MUTE_STATE,
-        INPUT_SOURCE.INPUT_SOURCE_STATE, PICTURE_SIZE.ASPECT_STATE,
+        INPUT_SOURCE.INPUT_SOURCE_STATE, PICTURE_ASPECT.PICTURE_ASPECT_STATE,
         Field(int, 'N_TIME_NF'), Field(int, 'F_TIME_NF')
     ]

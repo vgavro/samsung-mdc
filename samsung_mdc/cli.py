@@ -120,7 +120,6 @@ class Group(ArgumentWithHelpCommandMixin, click.Group):
             if value and not ctx.resilient_parsing:
                 # Match registered commands and show help for all of them
                 from sys import argv
-                print('parsing')
                 commands = [
                     ctx.command.commands[name]
                     for name in argv[1:]
