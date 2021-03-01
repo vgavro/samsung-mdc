@@ -171,6 +171,9 @@ class MDCCommand(ArgumentWithHelpCommandMixin, click.Command):
             else:
                 type = field.type
                 help = field.type.__name__
+                if field.range:
+                    help += f' ({field.range.start}-{field.range.stop - 1})'
+
             kwargs['params'].append(ArgumentWithHelp(
                 [f'data_{i}'], metavar=field.name, type=type, help=help))
 
@@ -322,7 +325,7 @@ def register_command(command):
         ]))
         loop.close()
 
-        if failed_targets:
+        if failed_targets and len(targets) > 1:
             print('Failed targets:', len(failed_targets))
             ctx.exit(1)
 

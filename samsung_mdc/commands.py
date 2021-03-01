@@ -4,8 +4,9 @@ from . import MDCConnection
 
 
 class Field:
-    def __init__(self, type, name=None):
-        self.type, self.name = type, name or type.__name__
+    def __init__(self, type, name=None, range=None):
+        self.type, self.name, self.range = (
+            type, name or type.__name__, range)
 
     def __call__(self, value):
         return self.type(value)
@@ -28,6 +29,12 @@ class SERIAL_NUMBER(metaclass=_CommandMeta):
     CMD = 0x0B
     GET, SET = True, False
     DATA = [Field(str, 'SERIAL_NUM')]
+
+
+class SOFTWARE_VERSION(metaclass=_CommandMeta):
+    CMD = 0x0E
+    GET, SET = True, False
+    DATA = [Field(str, 'SOFTWARE_VERSION')]
 
 
 class MODEL_NUMBER(metaclass=_CommandMeta):
@@ -66,7 +73,7 @@ class POWER(metaclass=_CommandMeta):
 class VOLUME(metaclass=_CommandMeta):
     CMD = 0x12
     GET, SET = True, True
-    VOLUME_INT = Field(int, 'VOLUME')
+    VOLUME_INT = Field(int, 'VOLUME', range(101))
     DATA = [VOLUME_INT]
 
 
@@ -159,6 +166,147 @@ class MDC_CONNECTION(metaclass=_CommandMeta):
         RJ45 = 0x01
 
     DATA = [MDC_CONNECTION_TYPE]
+
+
+class CONTRAST(metaclass=_CommandMeta):
+    CMD = 0x24
+    GET, SET = True, True
+    DATA = [Field(int, 'CONTRAST', range(101))]
+
+
+class BRIGHTNESS(metaclass=_CommandMeta):
+    CMD = 0x25
+    GET, SET = True, True
+    DATA = [Field(int, 'BRIGHTNESS', range(101))]
+
+
+class SHARPNESS(metaclass=_CommandMeta):
+    CMD = 0x26
+    GET, SET = True, True
+    DATA = [Field(int, 'SHARPNESS', range(101))]
+
+
+class COLOR(metaclass=_CommandMeta):
+    CMD = 0x27
+    GET, SET = True, True
+    DATA = [Field(int, 'COLOR', range(101))]
+
+
+class H_POSITION(metaclass=_CommandMeta):
+    CMD = 0x31
+    GET, SET = False, True
+
+    class H_POSITION_MOVE_TO(Enum):
+        LEFT = 0x00
+        RIGHT = 0x01
+
+    DATA = [H_POSITION_MOVE_TO]
+
+
+class V_POSITION(metaclass=_CommandMeta):
+    CMD = 0x32
+    GET, SET = False, True
+
+    class V_POSITION_MOVE_TO(Enum):
+        UP = 0x00
+        DOWN = 0x01
+
+    DATA = [V_POSITION_MOVE_TO]
+
+
+class AUTO_POWER(metaclass=_CommandMeta):
+    CMD = 0x33
+    GET, SET = True, True
+
+    class AUTO_POWER_STATE(Enum):
+        OFF = 0x00
+        ON = 0x01
+
+    DATA = [AUTO_POWER_STATE]
+
+
+class CLEAR_MENU(metaclass=_CommandMeta):
+    CMD = 0x34
+    SUBCMD = 0x00
+    GET, SET = False, True
+
+    DATA = []
+
+
+class IR_LOCK(metaclass=_CommandMeta):
+    """
+    Enables/disables IR (Infrared) receiving function (Remote Control).
+
+    Working Condition:
+    * Can operate regardless of whether power is ON/OFF
+    (If DPMS Situation in LFD, it operate Remocon regardless of set value)
+    """
+    CMD = 0x36
+    GET, SET = True, True
+
+    class IR_STATE(Enum):
+        DISABLE = 0x00
+        ENABLE = 0x01
+
+    DATA = [IR_STATE]
+
+
+class RGB_CONTRAST(metaclass=_CommandMeta):
+    CMD = 0x37
+    GET, SET = True, True
+    DATA = [Field(int, 'CONTRAST', range(101))]
+
+
+class RGB_BRIGHTNESS(metaclass=_CommandMeta):
+    CMD = 0x38
+    GET, SET = True, True
+    DATA = [Field(int, 'BRIGHTNESS', range(101))]
+
+
+class AUTO_ADJUSTMENT_ON(metaclass=_CommandMeta):
+    CMD = 0x3D
+    SUBCMD = 0x00
+    GET, SET = False, True
+    DATA = []
+
+
+class AUTO_LAMP(metaclass=_CommandMeta):
+    """
+    Auto Lamp function.
+
+    Note: When Manual Lamp Control is on,
+    Auto Lamp Control will automatically turn off.
+    """
+    CMD = 0x57
+    GET, SET = True, True
+
+    class AUTO_LAMP_DAY_PART(Enum):
+        AM = 1
+        PM = 0
+
+    DATA = [
+        Field(int, 'AUTO_LAMP_MAX_HOUR', range(1, 13)),
+        Field(int, 'AUTO_LAMP_MAX_MINUTE', range(60)),
+        Field(AUTO_LAMP_DAY_PART, 'AUTO_LAMP_MAX_DAY_PART'),
+        Field(int, 'AUTO_LAMP_MAX_VALUE', range(101)),
+
+        Field(int, 'AUTO_LAMP_MIN_HOUR', range(1, 13)),
+        Field(int, 'AUTO_LAMP_MIN_MINUTE', range(60)),
+        Field(AUTO_LAMP_DAY_PART, 'AUTO_LAMP_MIN_DAY_PART'),
+        Field(int, 'AUTO_LAMP_MIN_VALUE', range(101)),
+    ]
+
+
+class MANUAL_LAMP(metaclass=_CommandMeta):
+    """
+    Manual Lamp function.
+
+    Note: When Auto Lamp Control is on,
+    Manual Lamp Control will automatically turn off.
+    """
+    CMD = 0x58
+    GET, SET = True, True
+    DATA = [Field(int, 'LAMP_VALUE', range(101))]
 
 
 class DEVICE_NAME(metaclass=_CommandMeta):

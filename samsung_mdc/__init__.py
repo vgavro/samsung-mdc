@@ -154,7 +154,7 @@ class MDCConnection:
             )
         if meta.GET:
             command.__defaults__ = (b'',)
-        if not meta.SET:
+        if not meta.SET or not meta.DATA:
             command = partial(command, data=b'')
 
         command.meta = meta
