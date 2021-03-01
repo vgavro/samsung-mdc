@@ -117,7 +117,6 @@ class Group(ArgumentWithHelpCommandMixin, click.Group):
         # This is needed to be able to do "--help COMMAND"
         # without group required arguments
         def show_help(ctx, param, value):
-            print('showing', value, ctx.resilient_parsing)
             if value and not ctx.resilient_parsing:
                 # Match registered commands and show help for all of them
                 from sys import argv
