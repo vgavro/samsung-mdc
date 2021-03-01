@@ -158,7 +158,9 @@ class MDCCommand(ArgumentWithHelpCommandMixin, click.Command):
     def __init__(self, name, mdc_meta, **kwargs):
         self.mdc_meta = mdc_meta
         name = mdc_meta.name
-        kwargs['short_help'] = self._get_params_usage()
+        kwargs['short_help'] = self._get_params_hint()
+        if not mdc_meta.SET:
+            kwargs['short_help'] = f'({kwargs["short_help"]})'
         kwargs['help_arguments_label'] = 'Data'
         kwargs['help'] = trim_docstring(mdc_meta.__doc__)
 
@@ -179,12 +181,15 @@ class MDCCommand(ArgumentWithHelpCommandMixin, click.Command):
 
         super().__init__(name, **kwargs)
 
+    def _get_params_hint(self):
+        params = ' '.join([f.name for f in self.mdc_meta.DATA])
+        if self.mdc_meta.GET and self.mdc_meta.SET and params:
+            params = f'[{params}]'
+        return params
+
     def _get_params_usage(self):
         if self.mdc_meta.SET:
-            params = ' '.join([f.name for f in self.mdc_meta.DATA])
-            if self.mdc_meta.GET and params:
-                params = f'[{params}]'
-            return params
+            return self._get_params_hint()
         return ''
 
     def format_usage(self, ctx, formatter):
