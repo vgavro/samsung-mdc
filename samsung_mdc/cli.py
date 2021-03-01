@@ -6,7 +6,9 @@
 # "click" just may be not your best choice...
 
 from enum import Enum
+from functools import partial
 import asyncio
+import os.path
 
 import click
 
@@ -67,10 +69,10 @@ class EnumChoice(click.ParamType):
         else:
             # NOTE: Specific part for this project...
             # not sure how to make it more universal
-            if value.startswith('0x'):
-                value = int(value, 16)
-            elif value.isdigit():
-                value = int(value)
+            try:
+                value = _parse_int(value)
+            except ValueError:
+                pass
 
             if value in [v.value for v in self.enum]:
                 return value
@@ -193,7 +195,7 @@ class MDCCommand(ArgumentWithHelpCommandMixin, click.Command):
         # from group context to be able to do "samsung-mdc --help command1"
         params = f' {params}' if params else ''
         formatter.write_usage(
-            'samsung-mdc', f'[OPTIONS] ADDR ID {self.name}{params}')
+            'samsung-mdc', f'[OPTIONS] TARGET {self.name}{params}')
 
     def parse_args(self, ctx, args):
         # We need ALL arguments to be OR optional, OR required,
@@ -214,47 +216,109 @@ class MDCCommand(ArgumentWithHelpCommandMixin, click.Command):
             raise
 
 
+class MDCTargetParamType(click.ParamType):
+    name = 'mdc_target'
+
+    def get_missing_message(self, param):
+        return param.help
+
+    def convert_target(self, value, param, ctx):
+        if '@' not in value:
+            self.fail(
+                f'DISPLAY_ID required '
+                '(try 1, for some devices 0xFE(254) means "any")\n'
+                f'Format: {param.help}')
+
+        display_id, addr = value.split('@')
+        try:
+            display_id = _parse_int(display_id)
+        except ValueError:
+            self.fail(
+                f'Invalid DISPLAY_ID "{display_id}" '
+                '(int or hex, example: 1, 0x01, 254, 0xFE)\n'
+                f'Format: {param.help}')
+        if ':' in addr:
+            ip, port = addr.split(':')
+            try:
+                port = int(port)
+            except ValueError:
+                self.fail(
+                    f'Invalid PORT "{port}"\n'
+                    f'Format: {param.help}')
+        else:
+            ip, port = addr, 1515
+        return display_id, ip, port
+
+    def convert(self, value, param, ctx):
+        if '@' in value:
+            return [self.convert_target(value, param, ctx)]
+        else:
+            if not os.path.exists(value):
+                self.fail(
+                    f'FILENAME "{value}" does not exist.\n'
+                    f'Format: {param.help}')
+            else:
+                data = open(value).read()
+                data = [line.strip() for line in data.split('\n')
+                        if line.strip()]
+                targets = []
+                for i, line in enumerate(data):
+                    try:
+                        targets.append(self.convert_target(line, param, ctx))
+                    except click.UsageError as exc:
+                        exc.message = f'{value}:{i}: {exc.message}'
+                        raise
+                if not targets:
+                    self.fail(
+                        f'FILENAME "{value} is empty.\n'
+                        f'Format: {param.help}')
+                return targets
+
+
 @click.group(
     cls=Group,
     help="Try 'samsung-mdc --help COMMAND' for command info")
-@click.argument('addr', type=str, metavar='ADDR',
-                help='IP[:PORT] (default port: 1515)',
-                cls=ArgumentWithHelp)
-@click.argument('id', type=_parse_int, metavar='ID',
-                help='Display ID (int, example: 1)',
-                cls=ArgumentWithHelp)
+@click.argument('target', metavar='TARGET', help=(
+        'DISPLAY_ID@IP[:PORT] (default port: 1515) '
+        '(example: 1@192.168.0.10:1515) '
+        'or FILENAME with target list'
+    ), type=MDCTargetParamType(), cls=ArgumentWithHelp)
 @click.option('-v', '--verbose', is_flag=True, default=False, type=bool)
 @click.pass_context
-def cli(ctx, addr, id, verbose):
-    if ':' in addr:
-        ip, port = addr.split(':')
-        port = int(port)
-    else:
-        ip, port = addr, 1515
+def cli(ctx, target, verbose):
     ctx.ensure_object(dict)
-    ctx.obj['connection'] = MDCConnection(ip, port, verbose=verbose)
-    ctx.obj['id'] = id
+    ctx.obj['targets'] = target
     ctx.obj['verbose'] = verbose
 
 
 def register_command(command):
     @click.pass_context
     def _cmd(ctx, **kwargs):
-        args = tuple(kwargs.values())
+        call_args = tuple(kwargs.values())
+        call_args = [call_args] if call_args else []
+        targets = [(
+            display_id, ip, port, partial(
+                command,
+                MDCConnection(ip, port, verbose=ctx.obj['verbose']),
+                display_id
+            )) for display_id, ip, port in ctx.obj['targets']
+        ]
 
-        async def print_command(*args, **kwargs):
+        async def print_call(display_id, ip, port, call):
             try:
-                print(await command(*args, **kwargs))
+                print(f'{display_id}@{ip}:{port}:', await call(*call_args))
             except Exception as exc:
+                print(f'{display_id}@{ip}:{port}:',
+                      f'{exc.__class__.__name__}: {exc}')
                 if ctx.obj['verbose']:
                     raise
-                click.echo(f'{exc.__class__.__name__}: {exc}')
-                ctx.exit(1)
 
-        asyncio.run(print_command(
-            ctx.obj['connection'], ctx.obj['id'],
-            *([] if not args else [args])
-        ))
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(asyncio.wait([
+            loop.create_task(print_call(*target))
+            for target in targets
+        ]))
+        loop.close()
 
     cli.command(cls=MDCCommand, mdc_meta=command.meta)(_cmd)
 
