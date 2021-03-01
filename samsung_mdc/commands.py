@@ -30,6 +30,8 @@ class _CommandMeta(type):
             x if isinstance(x, Field) else Field(x)
             for x in dict['DATA']
         ]
+        if '__doc__' not in dict and bases and bases[0].__doc__:
+            dict['__doc__'] = bases[0].__doc__
         cls = type.__new__(mcs, name, bases, dict)
         MDCConnection.register_command(cls)
         return cls
@@ -40,10 +42,15 @@ class DAY_PART(Enum):
     PM = 0x00
 
 
+class LOCK_STATE(Enum):
+    OFF = 0x00
+    ON = 0x01
+
+
 class SERIAL_NUMBER(metaclass=_CommandMeta):
     CMD = 0x0B
     GET, SET = True, False
-    DATA = [Field(str, 'SERIAL_NUM')]
+    DATA = [Field(str, 'SERIAL_NUMBER')]
 
 
 class SOFTWARE_VERSION(metaclass=_CommandMeta):
@@ -253,15 +260,15 @@ class IR_LOCK(metaclass=_CommandMeta):
     Enables/disables IR (Infrared) receiving function (Remote Control).
 
     Working Condition:
-    * Can operate regardless of whether power is ON/OFF
-    (If DPMS Situation in LFD, it operate Remocon regardless of set value)
+    * Can operate regardless of whether power is ON/OFF.
+    (If DPMS Situation in LFD, it operate Remocon regardless of set value).
     """
     CMD = 0x36
     GET, SET = True, True
 
     class IR_STATE(Enum):
-        DISABLE = 0x00
-        ENABLE = 0x01
+        DISABLED = 0x00
+        ENABLED = 0x01
 
     DATA = [IR_STATE]
 
@@ -320,6 +327,29 @@ class MANUAL_LAMP(metaclass=_CommandMeta):
     DATA = [Field(int, 'LAMP_VALUE', range(101))]
 
 
+class INVERSE(metaclass=_CommandMeta):
+    CMD = 0x5A
+    GET, SET = True, True
+
+    class INVERSE_STATE(Enum):
+        OFF = 0x00
+        ON = 0x01
+
+    DATA = [INVERSE_STATE]
+
+
+class SAFETY_LOCK(metaclass=_CommandMeta):
+    CMD = 0x5D
+    GET, SET = True, True
+    DATA = [LOCK_STATE]
+
+
+class PANEL_LOCK(metaclass=_CommandMeta):
+    CMD = 0x5F
+    GET, SET = True, True
+    DATA = [LOCK_STATE]
+
+
 class DEVICE_NAME(metaclass=_CommandMeta):
     """
     It reads the device name which user set up in network.
@@ -328,12 +358,6 @@ class DEVICE_NAME(metaclass=_CommandMeta):
     CMD = 0x67
     GET, SET = True, False
     DATA = [Field(str, 'DEVICE_NAME')]
-
-
-class MODEL_NAME(metaclass=_CommandMeta):
-    CMD = 0x8A
-    GET, SET = True, False
-    DATA = [Field(str, 'MODEL_NAME')]
 
 
 class OSD(metaclass=_CommandMeta):
@@ -345,6 +369,30 @@ class OSD(metaclass=_CommandMeta):
         ON = 0x01
 
     DATA = [OSD_STATE]
+
+
+class ALL_KEYS_LOCK(metaclass=_CommandMeta):
+    """
+    Turns both REMOCON and Panel Key Lock function on/off.
+
+    Note: Can operate regardless of whether power is on/off.
+    """
+
+    # TODO: REMOCON? Remote Control?
+    CMD = 0x77
+    GET, SET = True, True
+
+    class LOCK_STATE(Enum):
+        OFF = 0x00
+        ON = 0x01
+
+    DATA = [LOCK_STATE]
+
+
+class MODEL_NAME(metaclass=_CommandMeta):
+    CMD = 0x8A
+    GET, SET = True, False
+    DATA = [Field(str, 'MODEL_NAME')]
 
 
 class OSD_TYPE(metaclass=_CommandMeta):
@@ -418,12 +466,12 @@ class TIMER_15_1(metaclass=_CommandMeta):
     ]
 
 
-class TIMER_15_2(TIMER_15_1):
-    CMD = 0xA5
-
-
-class TIMER_15_3(TIMER_15_1):
-    CMD = 0xA6
+TIMER_15_2 = type('TIMER_15_2', (TIMER_15_1,), {'CMD': 0xA5})
+TIMER_15_3 = type('TIMER_15_3', (TIMER_15_1,), {'CMD': 0xA6})
+TIMER_15_4 = type('TIMER_15_4', (TIMER_15_1,), {'CMD': 0xAB})
+TIMER_15_5 = type('TIMER_15_5', (TIMER_15_1,), {'CMD': 0xAC})
+TIMER_15_6 = type('TIMER_15_6', (TIMER_15_1,), {'CMD': 0xAD})
+TIMER_15_7 = type('TIMER_15_7', (TIMER_15_1,), {'CMD': 0xAE})
 
 
 class TIMER_13_1(TIMER_15_1):
@@ -438,12 +486,12 @@ class TIMER_13_1(TIMER_15_1):
     ]
 
 
-class TIMER_13_2(TIMER_13_1):
-    CMD = 0xA5
-
-
-class TIMER_13_3(TIMER_13_1):
-    CMD = 0xA6
+TIMER_13_2 = type('TIMER_13_2', (TIMER_13_1,), {'CMD': 0xA5})
+TIMER_13_3 = type('TIMER_13_3', (TIMER_13_1,), {'CMD': 0xA6})
+TIMER_13_4 = type('TIMER_13_4', (TIMER_13_1,), {'CMD': 0xAB})
+TIMER_13_5 = type('TIMER_13_5', (TIMER_13_1,), {'CMD': 0xAC})
+TIMER_13_6 = type('TIMER_13_6', (TIMER_13_1,), {'CMD': 0xAD})
+TIMER_13_7 = type('TIMER_13_7', (TIMER_13_1,), {'CMD': 0xAE})
 
 
 class RESET(metaclass=_CommandMeta):

@@ -342,8 +342,9 @@ def register_command(command):
         ]))
         loop.close()
 
-        if failed_targets and len(targets) > 1:
-            print('Failed targets:', len(failed_targets))
+        if failed_targets:
+            if len(targets) > 1:
+                print('Failed targets:', len(failed_targets))
             ctx.exit(1)
 
     cli.command(cls=MDCCommand, mdc_meta=command.meta)(_cmd)
