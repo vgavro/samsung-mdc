@@ -1,13 +1,8 @@
 from enum import Enum
+from functools import partial, partialmethod
 
-from . import MDCConnection
-
-
-def _bit_unmask(val, length=None):
-    rv = tuple(reversed(tuple(int(x) for x in tuple('{0:0b}'.format(val)))))
-    if length and len(rv) < length:
-        return rv + ((0,) * (length - len(rv)))
-    return rv
+from .exceptions import MDCResponseError, NAKError
+from .utils import bit_unmask
 
 
 class Field:
@@ -19,8 +14,11 @@ class Field:
         return self.type(value)
 
 
-class _CommandMeta(type):
+class _CommandMcs(type):
     def __new__(mcs, name, bases, dict):
+        if name.startswith('_'):
+            return type.__new__(mcs, name, bases, dict)
+
         if 'name' not in dict:
             dict['name'] = name.lower()
 
@@ -32,9 +30,76 @@ class _CommandMeta(type):
         ]
         if '__doc__' not in dict and bases and bases[0].__doc__:
             dict['__doc__'] = bases[0].__doc__
+
         cls = type.__new__(mcs, name, bases, dict)
-        MDCConnection.register_command(cls)
+
+        if cls.GET:
+            cls.__call__.__defaults__ = (b'',)
+        if not cls.SET or not cls.DATA:
+            cls.__call__ = partialmethod(cls.__call__, data=b'')
+
         return cls
+
+
+class _Command(metaclass=_CommandMcs):
+    CMD = None
+    SUBCMD = None
+
+    async def __call__(self, connection, display_id, data):
+        data = self.parse_response(
+            await connection.send(
+                (self.CMD, self.SUBCMD)
+                if self.SUBCMD is not None else self.CMD, display_id,
+                self.pack_payload_data(data) if data else []
+            ),
+        )
+        return self.parse_response_data(data)
+
+    def __get__(self, connection, cls):
+        # Allow command to be bounded as instance method
+        return partial(self, connection)
+
+    @staticmethod
+    def parse_response(response):
+        ack, rcmd, data = response
+        if not ack:
+            raise NAKError(data[0])
+        return data
+
+    @classmethod
+    def parse_response_data(cls, data, strict_enum=True):
+        rv = []
+        for i, field in enumerate(cls.DATA):
+            if field.type is str:
+                rv.append(data[i:].decode('utf8').rstrip('\x00'))
+                break
+            else:
+                try:
+                    value = field.type(data[i])
+                except ValueError:
+                    if not issubclass(field.type, Enum) or strict_enum:
+                        raise
+                    value = data[i]
+                rv.append(value)
+        if len(data) != len(rv) and not cls.DATA[-1].type is str:
+            raise MDCResponseError('Unexpected data length', data)
+        return tuple(rv)
+
+    @classmethod
+    def pack_payload_data(cls, data):
+        rv = bytes()
+        for i, field in enumerate(cls.DATA):
+            if field.type is str:
+                rv += data[i].encode()
+            else:
+                rv += bytes((getattr(data[i], 'value', data[i]),))
+        if len(data) != len(rv) and not cls.DATA[-1].type is str:
+            raise ValueError('Unexpected data length')
+        return rv
+
+    @classmethod
+    def get_order(cls):
+        return (cls.CMD, cls.SUBCMD)
 
 
 class DAY_PART(Enum):
@@ -47,19 +112,19 @@ class LOCK_STATE(Enum):
     ON = 0x01
 
 
-class SERIAL_NUMBER(metaclass=_CommandMeta):
+class SERIAL_NUMBER(_Command):
     CMD = 0x0B
     GET, SET = True, False
     DATA = [Field(str, 'SERIAL_NUMBER')]
 
 
-class SOFTWARE_VERSION(metaclass=_CommandMeta):
+class SOFTWARE_VERSION(_Command):
     CMD = 0x0E
     GET, SET = True, False
     DATA = [Field(str, 'SOFTWARE_VERSION')]
 
 
-class MODEL_NUMBER(metaclass=_CommandMeta):
+class MODEL_NUMBER(_Command):
     CMD = 0x10
     GET, SET = True, False
 
@@ -80,7 +145,7 @@ class MODEL_NUMBER(metaclass=_CommandMeta):
     DATA = [MODEL_SPECIES, Field(int, 'MODEL_NUMBER'), TV_SUPPORT]
 
 
-class POWER(metaclass=_CommandMeta):
+class POWER(_Command):
     CMD = 0x11
     GET, SET = True, True
 
@@ -92,14 +157,14 @@ class POWER(metaclass=_CommandMeta):
     DATA = [POWER_STATE]
 
 
-class VOLUME(metaclass=_CommandMeta):
+class VOLUME(_Command):
     CMD = 0x12
     GET, SET = True, True
     VOLUME_INT = Field(int, 'VOLUME', range(101))
     DATA = [VOLUME_INT]
 
 
-class MUTE(metaclass=_CommandMeta):
+class MUTE(_Command):
     CMD = 0x13
     GET, SET = True, True
 
@@ -110,7 +175,7 @@ class MUTE(metaclass=_CommandMeta):
     DATA = [MUTE_STATE]
 
 
-class INPUT_SOURCE(metaclass=_CommandMeta):
+class INPUT_SOURCE(_Command):
     CMD = 0x14
     GET, SET = True, True
 
@@ -149,7 +214,7 @@ class INPUT_SOURCE(metaclass=_CommandMeta):
     DATA = [INPUT_SOURCE_STATE]
 
 
-class PICTURE_ASPECT(metaclass=_CommandMeta):
+class PICTURE_ASPECT(_Command):
     CMD = 0x15
     GET, SET = True, True
 
@@ -176,7 +241,7 @@ class PICTURE_ASPECT(metaclass=_CommandMeta):
     DATA = [PICTURE_ASPECT_STATE]
 
 
-class MDC_CONNECTION(metaclass=_CommandMeta):
+class MDC_CONNECTION(_Command):
     CMD = 0x1D
     GET, SET = True, False
     # NOTE: There is no Set command in documentation,
@@ -190,31 +255,31 @@ class MDC_CONNECTION(metaclass=_CommandMeta):
     DATA = [MDC_CONNECTION_TYPE]
 
 
-class CONTRAST(metaclass=_CommandMeta):
+class CONTRAST(_Command):
     CMD = 0x24
     GET, SET = True, True
     DATA = [Field(int, 'CONTRAST', range(101))]
 
 
-class BRIGHTNESS(metaclass=_CommandMeta):
+class BRIGHTNESS(_Command):
     CMD = 0x25
     GET, SET = True, True
     DATA = [Field(int, 'BRIGHTNESS', range(101))]
 
 
-class SHARPNESS(metaclass=_CommandMeta):
+class SHARPNESS(_Command):
     CMD = 0x26
     GET, SET = True, True
     DATA = [Field(int, 'SHARPNESS', range(101))]
 
 
-class COLOR(metaclass=_CommandMeta):
+class COLOR(_Command):
     CMD = 0x27
     GET, SET = True, True
     DATA = [Field(int, 'COLOR', range(101))]
 
 
-class H_POSITION(metaclass=_CommandMeta):
+class H_POSITION(_Command):
     CMD = 0x31
     GET, SET = False, True
 
@@ -225,7 +290,7 @@ class H_POSITION(metaclass=_CommandMeta):
     DATA = [H_POSITION_MOVE_TO]
 
 
-class V_POSITION(metaclass=_CommandMeta):
+class V_POSITION(_Command):
     CMD = 0x32
     GET, SET = False, True
 
@@ -236,7 +301,7 @@ class V_POSITION(metaclass=_CommandMeta):
     DATA = [V_POSITION_MOVE_TO]
 
 
-class AUTO_POWER(metaclass=_CommandMeta):
+class AUTO_POWER(_Command):
     CMD = 0x33
     GET, SET = True, True
 
@@ -247,7 +312,7 @@ class AUTO_POWER(metaclass=_CommandMeta):
     DATA = [AUTO_POWER_STATE]
 
 
-class CLEAR_MENU(metaclass=_CommandMeta):
+class CLEAR_MENU(_Command):
     CMD = 0x34
     SUBCMD = 0x00
     GET, SET = False, True
@@ -255,7 +320,7 @@ class CLEAR_MENU(metaclass=_CommandMeta):
     DATA = []
 
 
-class IR_LOCK(metaclass=_CommandMeta):
+class IR_LOCK(_Command):
     """
     Enables/disables IR (Infrared) receiving function (Remote Control).
 
@@ -273,26 +338,26 @@ class IR_LOCK(metaclass=_CommandMeta):
     DATA = [IR_STATE]
 
 
-class RGB_CONTRAST(metaclass=_CommandMeta):
+class RGB_CONTRAST(_Command):
     CMD = 0x37
     GET, SET = True, True
     DATA = [Field(int, 'CONTRAST', range(101))]
 
 
-class RGB_BRIGHTNESS(metaclass=_CommandMeta):
+class RGB_BRIGHTNESS(_Command):
     CMD = 0x38
     GET, SET = True, True
     DATA = [Field(int, 'BRIGHTNESS', range(101))]
 
 
-class AUTO_ADJUSTMENT_ON(metaclass=_CommandMeta):
+class AUTO_ADJUSTMENT_ON(_Command):
     CMD = 0x3D
     SUBCMD = 0x00
     GET, SET = False, True
     DATA = []
 
 
-class AUTO_LAMP(metaclass=_CommandMeta):
+class AUTO_LAMP(_Command):
     """
     Auto Lamp function.
 
@@ -315,7 +380,7 @@ class AUTO_LAMP(metaclass=_CommandMeta):
     ]
 
 
-class MANUAL_LAMP(metaclass=_CommandMeta):
+class MANUAL_LAMP(_Command):
     """
     Manual Lamp function.
 
@@ -327,7 +392,7 @@ class MANUAL_LAMP(metaclass=_CommandMeta):
     DATA = [Field(int, 'LAMP_VALUE', range(101))]
 
 
-class INVERSE(metaclass=_CommandMeta):
+class INVERSE(_Command):
     CMD = 0x5A
     GET, SET = True, True
 
@@ -338,19 +403,19 @@ class INVERSE(metaclass=_CommandMeta):
     DATA = [INVERSE_STATE]
 
 
-class SAFETY_LOCK(metaclass=_CommandMeta):
+class SAFETY_LOCK(_Command):
     CMD = 0x5D
     GET, SET = True, True
     DATA = [LOCK_STATE]
 
 
-class PANEL_LOCK(metaclass=_CommandMeta):
+class PANEL_LOCK(_Command):
     CMD = 0x5F
     GET, SET = True, True
     DATA = [LOCK_STATE]
 
 
-class DEVICE_NAME(metaclass=_CommandMeta):
+class DEVICE_NAME(_Command):
     """
     It reads the device name which user set up in network.
     Shows the information about entered device name.
@@ -360,7 +425,7 @@ class DEVICE_NAME(metaclass=_CommandMeta):
     DATA = [Field(str, 'DEVICE_NAME')]
 
 
-class OSD(metaclass=_CommandMeta):
+class OSD(_Command):
     CMD = 0x70
     GET, SET = True, True
 
@@ -371,7 +436,7 @@ class OSD(metaclass=_CommandMeta):
     DATA = [OSD_STATE]
 
 
-class ALL_KEYS_LOCK(metaclass=_CommandMeta):
+class ALL_KEYS_LOCK(_Command):
     """
     Turns both REMOCON and Panel Key Lock function on/off.
 
@@ -389,13 +454,13 @@ class ALL_KEYS_LOCK(metaclass=_CommandMeta):
     DATA = [LOCK_STATE]
 
 
-class MODEL_NAME(metaclass=_CommandMeta):
+class MODEL_NAME(_Command):
     CMD = 0x8A
     GET, SET = True, False
     DATA = [Field(str, 'MODEL_NAME')]
 
 
-class OSD_TYPE(metaclass=_CommandMeta):
+class OSD_TYPE(_Command):
     CMD = 0xA3
     GET, SET = True, True
 
@@ -412,8 +477,8 @@ class OSD_TYPE(metaclass=_CommandMeta):
     def parse_response_data(cls, data):
         return tuple(
             (cls.OSD_TYPE(i), OSD.OSD_STATE(x))
-            for i, x in enumerate(_bit_unmask(data[0],
-                                  length=len(cls.OSD_TYPE)))
+            for i, x in enumerate(
+                bit_unmask(data[0], length=len(cls.OSD_TYPE)))
         )
 
 
@@ -433,13 +498,14 @@ class HOLIDAY_APPLY(Enum):
     OFF_TIMER_ONLY_APPLY = 0x03
 
 
-class TIMER_15_1(metaclass=_CommandMeta):
+class TIMER_15(_Command):
     """
     Integrated timer function (15 parameters version).
 
     Note: This depends on product and will not work on older versions.
     """
-    CMD = 0xA4
+    CMD = Field(int, 'TIMER_ID', range(1, 8))
+    _TIMER_ID_CMD = [0xA4, 0xA5, 0xA6, 0xAB, 0xAC, 0xAD, 0xAE]
     GET, SET = True, True
 
     DATA = [
@@ -453,48 +519,49 @@ class TIMER_15_1(metaclass=_CommandMeta):
         Field(DAY_PART, 'OFF_DAY_PART'),
         Field(bool, 'OFF_ACT'),
 
-        Field(TIMER_REPEAT, 'REPEAT_ON'),
+        Field(TIMER_REPEAT, 'ON_REPEAT'),
         # TODO: implement bitmask field
-        Field(int, 'MANUAL_WEEKDAY_ON'),
+        Field(int, 'ON_MANUAL_WEEKDAY'),
 
-        Field(TIMER_REPEAT, 'REPEAT_OFF'),
-        Field(int, 'MANUAL_WEEKDAY_OFF'),
+        Field(TIMER_REPEAT, 'OFF_REPEAT'),
+        Field(int, 'OFF_MANUAL_WEEKDAY'),
 
         VOLUME.VOLUME_INT,
         INPUT_SOURCE.INPUT_SOURCE_STATE,
         HOLIDAY_APPLY,
     ]
 
+    async def __call__(self, connection, display_id, timer_id, data):
+        cmd = self._TIMER_ID_CMD[timer_id - 1]
+        data = self.parse_response(
+            await connection.send(
+                cmd, display_id,
+                self.pack_payload_data(data) if data else []
+            ),
+        )
+        return self.parse_response_data(data)
 
-TIMER_15_2 = type('TIMER_15_2', (TIMER_15_1,), {'CMD': 0xA5})
-TIMER_15_3 = type('TIMER_15_3', (TIMER_15_1,), {'CMD': 0xA6})
-TIMER_15_4 = type('TIMER_15_4', (TIMER_15_1,), {'CMD': 0xAB})
-TIMER_15_5 = type('TIMER_15_5', (TIMER_15_1,), {'CMD': 0xAC})
-TIMER_15_6 = type('TIMER_15_6', (TIMER_15_1,), {'CMD': 0xAD})
-TIMER_15_7 = type('TIMER_15_7', (TIMER_15_1,), {'CMD': 0xAE})
+    @classmethod
+    def get_order(cls):
+        return (0xA4, cls.name)
 
 
-class TIMER_13_1(TIMER_15_1):
+class TIMER_13(TIMER_15):
     """
     Integrated timer function (13 parameters version).
 
     Note: This depends on product and will not work on newer versions.
     """
-    DATA = [
-        f for f in TIMER_15_1.DATA
-        if f.name not in ('REPEAT_OFF', 'MANUAL_WEEKDAY_OFF')
-    ]
+    DATA = []
+    for f in TIMER_15.DATA:
+        if f.name not in ('OFF_REPEAT', 'OFF_MANUAL_WEEKDAY'):
+            if f.name in ('ON_REPEAT', 'ON_MANUAL_WEEKDAY'):
+                DATA.append(Field(f.type, f.name.replace('ON_', ''), f.range))
+            else:
+                DATA.append(f)
 
 
-TIMER_13_2 = type('TIMER_13_2', (TIMER_13_1,), {'CMD': 0xA5})
-TIMER_13_3 = type('TIMER_13_3', (TIMER_13_1,), {'CMD': 0xA6})
-TIMER_13_4 = type('TIMER_13_4', (TIMER_13_1,), {'CMD': 0xAB})
-TIMER_13_5 = type('TIMER_13_5', (TIMER_13_1,), {'CMD': 0xAC})
-TIMER_13_6 = type('TIMER_13_6', (TIMER_13_1,), {'CMD': 0xAD})
-TIMER_13_7 = type('TIMER_13_7', (TIMER_13_1,), {'CMD': 0xAE})
-
-
-class RESET(metaclass=_CommandMeta):
+class RESET(_Command):
     CMD = 0x9F
     GET, SET = False, True
 
@@ -508,7 +575,7 @@ class RESET(metaclass=_CommandMeta):
     DATA = [RESET_TARGET]
 
 
-class VIRTUAL_REMOTE(metaclass=_CommandMeta):
+class VIRTUAL_REMOTE(_Command):
     """
     This function support that MDC command can work same as remote control.
 
@@ -566,7 +633,7 @@ class VIRTUAL_REMOTE(metaclass=_CommandMeta):
     DATA = [REMOTE_KEY_CODE]
 
 
-class NETWORK_STANDBY(metaclass=_CommandMeta):
+class NETWORK_STANDBY(_Command):
     CMD = 0xB5
     GET, SET = True, True
 
@@ -577,7 +644,7 @@ class NETWORK_STANDBY(metaclass=_CommandMeta):
     DATA = [NETWORK_STANDBY_STATE]
 
 
-class AUTO_ID_SETTING(metaclass=_CommandMeta):
+class AUTO_ID_SETTING(_Command):
     CMD = 0xB8
     GET, SET = True, True
 
@@ -588,7 +655,7 @@ class AUTO_ID_SETTING(metaclass=_CommandMeta):
     DATA = [AUTO_ID_SETTING_STATE]
 
 
-class DISPLAY_ID(metaclass=_CommandMeta):
+class DISPLAY_ID(_Command):
     CMD = 0xB9
     GET, SET = False, True
 
@@ -599,7 +666,7 @@ class DISPLAY_ID(metaclass=_CommandMeta):
     DATA = [DISPLAY_ID_STATE]
 
 
-class LAUNCHER_PLAY_VIA(metaclass=_CommandMeta):
+class LAUNCHER_PLAY_VIA(_Command):
     CMD = 0xC7
     SUBCMD = 0x81
     GET, SET = True, True
@@ -612,14 +679,14 @@ class LAUNCHER_PLAY_VIA(metaclass=_CommandMeta):
     DATA = [PLAY_VIA_MODE]
 
 
-class LAUNCHER_URL_ADDRESS(metaclass=_CommandMeta):
+class LAUNCHER_URL_ADDRESS(_Command):
     CMD = 0xC7
     SUBCMD = 0x82
     GET, SET = True, True
     DATA = [Field(str, 'URL_ADDRESS')]
 
 
-class STATUS(metaclass=_CommandMeta):
+class STATUS(_Command):
     CMD = 0x00
     GET, SET = True, False
     DATA = [

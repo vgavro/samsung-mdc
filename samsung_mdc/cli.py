@@ -9,10 +9,12 @@ from enum import Enum
 from functools import partial
 import asyncio
 import os.path
+from sys import argv as sys_argv
 
 import click
 
-from . import MDCConnection
+from . import MDC
+from .commands import Field as MDCField
 
 
 def _parse_int(x):
@@ -119,10 +121,9 @@ class Group(ArgumentWithHelpCommandMixin, click.Group):
         def show_help(ctx, param, value):
             if value and not ctx.resilient_parsing:
                 # Match registered commands and show help for all of them
-                from sys import argv
                 commands = [
                     ctx.command.commands[name]
-                    for name in argv[1:]
+                    for name in sys_argv[1:]
                     if name in ctx.command.commands
                 ]
                 if commands:
@@ -147,48 +148,59 @@ class Group(ArgumentWithHelpCommandMixin, click.Group):
         )
 
     def list_commands(self, ctx):
-        # Avoid sorting commands by name, sort by CMD code instead
+        # Avoid sorting commands by name, sort by order code instead
         return [c.name for c in sorted(
             self.commands.values(),
-            key=lambda c: (c.mdc_meta.CMD, getattr(c.mdc_meta, 'SUBCMD', None))
+            key=lambda c: c.mdc_command.get_order()
         )]
 
 
-class MDCCommand(ArgumentWithHelpCommandMixin, click.Command):
-    def __init__(self, name, mdc_meta, **kwargs):
-        self.mdc_meta = mdc_meta
-        name = mdc_meta.name
+class MDCClickCommand(ArgumentWithHelpCommandMixin, click.Command):
+    def __init__(self, name, mdc_command, **kwargs):
+        self.mdc_command = mdc_command
+        name = mdc_command.name
         kwargs['short_help'] = self._get_params_hint()
-        if not mdc_meta.SET:
+        if not mdc_command.SET:
             kwargs['short_help'] = f'({kwargs["short_help"]})'
         kwargs['help_arguments_label'] = 'Data'
-        kwargs['help'] = trim_docstring(mdc_meta.__doc__)
+        kwargs['help'] = trim_docstring(mdc_command.__doc__)
 
         # Registering params from DATA format
         kwargs.setdefault('params', [])
-        for i, field in enumerate(mdc_meta.DATA):
-            if issubclass(field.type, Enum):
-                type = EnumChoice(field.type)
-                help = '|'.join(field.type.__members__.keys())
-            else:
-                type = field.type
-                help = field.type.__name__
-                if field.range:
-                    help += f' ({field.range.start}-{field.range.stop - 1})'
 
-            kwargs['params'].append(ArgumentWithHelp(
-                [f'data_{i}'], metavar=field.name, type=type, help=help))
+        if isinstance(mdc_command.CMD, MDCField):
+            kwargs['params'].append(
+                self._get_argument_from_mdc_field(mdc_command.CMD))
+
+        for i, field in enumerate(mdc_command.DATA):
+            kwargs['params'].append(
+                self._get_argument_from_mdc_field(field))
 
         super().__init__(name, **kwargs)
 
+    def _get_argument_from_mdc_field(self, field):
+        if issubclass(field.type, Enum):
+            type = EnumChoice(field.type)
+            help = '|'.join(field.type.__members__.keys())
+        else:
+            type = field.type
+            help = field.type.__name__
+            if field.range:
+                help += f' ({field.range.start}-{field.range.stop - 1})'
+
+        return ArgumentWithHelp(
+            [field.name], metavar=field.name, type=type, help=help)
+
     def _get_params_hint(self):
-        params = ' '.join([f.name for f in self.mdc_meta.DATA])
-        if self.mdc_meta.GET and self.mdc_meta.SET and params:
+        params = ' '.join([f.name for f in self.mdc_command.DATA])
+        if self.mdc_command.GET and self.mdc_command.SET and params:
             params = f'[{params}]'
+        if isinstance(self.mdc_command.CMD, MDCField):
+            params = f'{self.mdc_command.CMD.name} {params}'
         return params
 
     def _get_params_usage(self):
-        if self.mdc_meta.SET:
+        if self.mdc_command.SET:
             return self._get_params_hint()
         return ''
 
@@ -209,7 +221,37 @@ class MDCCommand(ArgumentWithHelpCommandMixin, click.Command):
         # We need ALL arguments to be OR optional, OR required,
         # so if there is no arguments supplied - this is proper
         # GET command
-        if not args and self.mdc_meta.GET:
+
+        # Parametrized CMD is special case for timer,
+        # we have 14 almost identical commands otherwise...
+        if isinstance(self.mdc_command.CMD, MDCField):
+            if self.mdc_command.GET and len(args) == 1:
+                if '--help' in sys_argv:
+                    super().parse_args(ctx, args)
+
+                parser = self.make_parser(ctx)
+                opts, args, param_order = parser.parse_args(args=args)
+                for param in self.get_params(ctx):
+                    try:
+                        value, args = param.handle_parse_result(
+                            ctx, opts, args)
+                    except click.UsageError as exc:
+                        # Avoid "Try 'samsung-mdc {command} --help' for help."
+                        # that renders in UsageError,
+                        # because it's wrong command because of required group
+                        # command args
+                        # (maybe this will be fixed in future click versions?)
+                        exc.cmd = None
+                        raise
+                    break  # after first argument
+
+                ctx.args = args
+                return
+
+        # We need ALL arguments to be OR optional, OR required,
+        # so if there is no arguments supplied - this is proper
+        # GET command
+        elif not args and self.mdc_command.GET:
             ctx.args = args
             return args
 
@@ -223,7 +265,7 @@ class MDCCommand(ArgumentWithHelpCommandMixin, click.Command):
             exc.cmd = None
 
             # Avoid parameters validation on GET-only commands
-            if not self.mdc_meta.SET:
+            if not self.mdc_command.SET:
                 exc = click.UsageError('Readonly command doesn\'t accept '
                                        'any arguments', ctx)
                 exc.cmd = None
@@ -310,16 +352,19 @@ def register_command(command):
     @click.pass_context
     def _cmd(ctx, **kwargs):
         call_args = tuple(kwargs.values())
-        call_args = [call_args] if call_args else []
+        if isinstance(command.CMD, MDCField):
+            call_args = call_args[0], call_args[1:]
+        else:
+            call_args = [call_args] if call_args else []
 
-        if call_args and not command.meta.SET:
+        if call_args and not command.SET:
             raise click.UsageError('Readonly command doesn\'t accept '
                                    'any arguments')
 
         targets = [(
             display_id, ip, port, partial(
                 command,
-                MDCConnection(ip, port, verbose=ctx.obj['verbose']),
+                MDC(ip, port, verbose=ctx.obj['verbose']),
                 display_id
             )) for display_id, ip, port in ctx.obj['targets']
         ]
@@ -347,8 +392,8 @@ def register_command(command):
                 print('Failed targets:', len(failed_targets))
             ctx.exit(1)
 
-    cli.command(cls=MDCCommand, mdc_meta=command.meta)(_cmd)
+    cli.command(cls=MDCClickCommand, mdc_command=command)(_cmd)
 
 
-for command in MDCConnection._commands.values():
+for command in MDC._commands.values():
     register_command(command)
