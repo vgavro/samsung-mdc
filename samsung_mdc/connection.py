@@ -2,7 +2,7 @@ from typing import Union, Sequence, Tuple
 from functools import partial
 import asyncio
 
-from .exceptions import MDCResponseError
+from .exceptions import MDCResponseError, MDCTimeoutError
 
 
 HEADER_CODE = 0xAA
@@ -16,18 +16,29 @@ def _repr_hex(value):
     return ' '.join(f'{x:02x}' for x in value)
 
 
+async def wait_for(aw, timeout, reason):
+    try:
+        return await asyncio.wait_for(aw, timeout)
+    except asyncio.TimeoutError as exc:
+        raise MDCTimeoutError(reason) from exc
+
+
 class MDCConnection:
     reader, writer = None, None
 
-    def __init__(self, ip, port=1515, verbose=False):
-        self.ip, self.port = ip, port
+    def __init__(self, ip, port=1515, timeout=3, connection_timeout=None,
+                 verbose=False):
+        self.ip, self.port, self.timeout = ip, port, timeout
+        self.connection_timeout = connection_timeout or timeout
         self.verbose = (
             partial(print, f'{ip}:{port}') if verbose is True else verbose)
 
     async def open(self):
         # opens TCP connection
         self.reader, self.writer = \
-            await asyncio.open_connection(self.ip, self.port)
+            await wait_for(
+                asyncio.open_connection(self.ip, self.port),
+                self.connection_timeout, 'Connection timeout')
 
     @property
     def is_opened(self):
@@ -52,24 +63,26 @@ class MDCConnection:
                 self.verbose(f'{self.ip}:{self.port}', 'Connected')
 
         self.writer.write(payload)
+        await wait_for(self.writer.drain(), self.timeout, 'Write timeout')
         if self.verbose:
             self.verbose(f'{self.ip}:{self.port}', 'Sent', _repr_hex(payload))
-        await self.writer.drain()
 
-        resp = await self.reader.read(4)
+        resp = await wait_for(self.reader.read(4), self.timeout,
+                              'Response header read timeout')
         if resp[0] != HEADER_CODE:
             raise MDCResponseError('Unexpected header', resp)
         if resp[1] != RESPONSE_CMD:
             raise MDCResponseError('Unexpected cmd', resp)
         if resp[2] != id:
             raise MDCResponseError('Unexpected id', resp)
-        resp += await self.reader.read(resp[3] + 1)
+        resp += await wait_for(self.reader.read(resp[3] + 1), self.timeout,
+                               'Response data read timeout')
+        if self.verbose:
+            self.verbose(f'{self.ip}:{self.port}', 'Recv', _repr_hex(resp))
+
         checksum = sum(resp[1:-1]) % 256
         if checksum != int(resp[-1]):
             raise MDCResponseError('Checksum failed', resp)
-
-        if self.verbose:
-            self.verbose(f'{self.ip}:{self.port}', 'Recv', _repr_hex(resp))
 
         ack, rcmd, data = resp[4], resp[5], resp[6:-1]
         if ack not in (ACK_CODE, NAK_CODE):

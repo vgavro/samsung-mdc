@@ -1,4 +1,11 @@
+from asyncio import TimeoutError
+
+
 class MDCError(Exception):
+    pass
+
+
+class MDCTimeoutError(MDCError, TimeoutError):
     pass
 
 
