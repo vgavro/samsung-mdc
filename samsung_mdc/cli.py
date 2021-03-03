@@ -1,11 +1,12 @@
-# NOTE: This module is overloading some internals of "click" library
+# NOTE: This module is hacking some internals of "click" library
 # and may not work stable in case of click major changes in future versions.
 # Tested with click==7.1.2
 
-# Beware - if you want something flexible and overridable for cli processing,
-# "click" just may be not your best choice...
+# BEWARE: If you want something flexible and overridable for cli processing,
+# "click" just may not be your choice...
 
 from enum import Enum
+from datetime import datetime
 from functools import partial
 import asyncio
 import os.path
@@ -148,7 +149,8 @@ class Group(ArgumentWithHelpCommandMixin, click.Group):
         )
 
     def list_commands(self, ctx):
-        # Avoid sorting commands by name, sort by order code instead
+        # Avoid sorting commands by name, sort by CMD code instead
+        # (as it goes in documentation)
         return [c.name for c in sorted(
             self.commands.values(),
             key=lambda c: c.mdc_command.get_order()
@@ -182,6 +184,13 @@ class MDCClickCommand(ArgumentWithHelpCommandMixin, click.Command):
         if issubclass(field.type, Enum):
             type = EnumChoice(field.type)
             help = '|'.join(field.type.__members__.keys())
+        elif issubclass(field.type, datetime):
+            formats = [
+                "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S",
+                "%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M",
+            ]
+            type = click.DateTime(formats)
+            help = f'datetime (format: {" / ".join(formats)})'
         else:
             type = field.type
             help = field.type.__name__
@@ -222,7 +231,7 @@ class MDCClickCommand(ArgumentWithHelpCommandMixin, click.Command):
         # so if there is no arguments supplied - this is proper
         # GET command
 
-        # Parametrized CMD is special case for timer,
+        # Except parametrized CMD - special case for timer,
         # we have 14 almost identical commands otherwise...
         if isinstance(self.mdc_command.CMD, MDCField):
             if self.mdc_command.GET and len(args) == 1:
@@ -248,9 +257,6 @@ class MDCClickCommand(ArgumentWithHelpCommandMixin, click.Command):
                 ctx.args = args
                 return
 
-        # We need ALL arguments to be OR optional, OR required,
-        # so if there is no arguments supplied - this is proper
-        # GET command
         elif not args and self.mdc_command.GET:
             ctx.args = args
             return args

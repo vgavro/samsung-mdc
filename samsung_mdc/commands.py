@@ -1,8 +1,9 @@
 from enum import Enum
+from datetime import datetime
 from functools import partial, partialmethod
 
 from .exceptions import MDCResponseError, NAKError
-from .utils import bit_unmask
+from .utils import bit_unmask, parse_mdc_time, pack_mdc_time
 
 
 class Field:
@@ -103,8 +104,8 @@ class _Command(metaclass=_CommandMcs):
 
 
 class DAY_PART(Enum):
-    AM = 0x01
     PM = 0x00
+    AM = 0x01
 
 
 class LOCK_STATE(Enum):
@@ -573,6 +574,68 @@ class RESET(_Command):
         SCREEN_DISPLAY = 0x04
 
     DATA = [RESET_TARGET]
+
+
+class CLOCK_S(_Command):
+    """
+    Current time function (second precision).
+
+    Note: This is for models developed after 2013.
+    For older models see CLOCK_M function (minute precision).
+    """
+    GET, SET = True, True
+    CMD = 0xC5
+
+    DATA = [Field(datetime, 'DATETIME')]
+
+    @classmethod
+    def parse_response_data(cls, data):
+        if not len(data) == 8:
+            raise MDCResponseError('Unexpected data length', data)
+        time = parse_mdc_time(data[7], data[1], data[2], data[3])
+        return (datetime(
+            int.from_bytes(data[5:7], 'big'),  # year
+            data[4], data[0],  # month, day
+            time.hour, time.minute, time.second
+        ),)
+
+    @classmethod
+    def pack_payload_data(cls, data, seconds=True):
+        print(data)
+        if len(data) != 1:
+            raise ValueError('Unexpected data length')
+        dt = data[0]
+        day_part, hour, minute, second = pack_mdc_time(dt.time())
+        return (
+            bytes([dt.day, hour, minute])
+            + (seconds and bytes([second]) or b'')
+            + bytes([dt.month])
+            + int.to_bytes(dt.year, 2, 'big') + bytes([day_part]))
+
+
+class CLOCK_M(CLOCK_S):
+    """
+    Current time function (minute precision).
+
+    Note: This is for models developed until 2013.
+    For newer models see CLOCK_S function (seconds precision).
+    """
+    CMD = 0xA7
+
+    @classmethod
+    def parse_response_data(cls, data):
+        if not len(data) == 7:
+            raise MDCResponseError('Unexpected data length', data)
+        time = parse_mdc_time(data[6], data[1], data[2])
+        return (datetime(
+            int.from_bytes(data[4:6], 'big'),  # year
+            data[3], data[0],  # month, day
+            time.hour, time.minute, time.second
+        ),)
+
+    @classmethod
+    def pack_payload_data(cls, data):
+        return CLOCK_S.pack_payload_data(data, seconds=False)
 
 
 class VIRTUAL_REMOTE(_Command):
