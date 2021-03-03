@@ -187,7 +187,7 @@ class MDCClickCommand(ArgumentWithHelpCommandMixin, click.Command):
         elif issubclass(field.type, datetime):
             formats = [
                 "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S",
-                "%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M",
+                "%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M",
             ]
             type = click.DateTime(formats)
             help = f'datetime (format: {" / ".join(formats)})'
