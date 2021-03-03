@@ -1,4 +1,5 @@
 from typing import Union, Sequence, Tuple
+from functools import partial
 import asyncio
 
 from .exceptions import MDCResponseError
@@ -20,7 +21,8 @@ class MDCConnection:
 
     def __init__(self, ip, port=1515, verbose=False):
         self.ip, self.port = ip, port
-        self.verbose = verbose
+        self.verbose = (
+            partial(print, f'{ip}:{port}') if verbose is True else verbose)
 
     async def open(self):
         # opens TCP connection
@@ -47,11 +49,11 @@ class MDCConnection:
         if not self.is_opened:
             await self.open()
             if self.verbose:
-                print(f'{self.ip}:{self.port}', 'Connected')
+                self.verbose(f'{self.ip}:{self.port}', 'Connected')
 
         self.writer.write(payload)
         if self.verbose:
-            print(f'{self.ip}:{self.port}', 'Sent', _repr_hex(payload))
+            self.verbose(f'{self.ip}:{self.port}', 'Sent', _repr_hex(payload))
         await self.writer.drain()
 
         resp = await self.reader.read(4)
@@ -67,7 +69,7 @@ class MDCConnection:
             raise MDCResponseError('Checksum failed', resp)
 
         if self.verbose:
-            print(f'{self.ip}:{self.port}', 'Recv', _repr_hex(resp))
+            self.verbose(f'{self.ip}:{self.port}', 'Recv', _repr_hex(resp))
 
         ack, rcmd, data = resp[4], resp[5], resp[6:-1]
         if ack not in (ACK_CODE, NAK_CODE):
