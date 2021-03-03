@@ -1,6 +1,7 @@
 import inspect
 
 from .connection import MDCConnection
+from .command import Command
 from . import commands
 
 
@@ -14,5 +15,5 @@ class MDC(MDCConnection):
 
 
 for name, cls in inspect.getmembers(commands, inspect.isclass):
-    if issubclass(cls, commands._Command) and not name.startswith('_'):
+    if issubclass(cls, Command) and not name.startswith('_'):
         MDC.register_command(cls())
