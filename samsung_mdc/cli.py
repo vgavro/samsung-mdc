@@ -216,7 +216,7 @@ class MDCClickCommand(FixedSubcommand):
     def _get_argument_from_mdc_field(self, field, ident=None):
         if issubclass(field.type, Enum):
             type = EnumChoice(field.type)
-            help = '|'.join(field.type.__members__.keys())
+            help = ' | '.join(field.type.__members__.keys())
         elif issubclass(field.type, datetime):
             formats = [
                 "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S",
@@ -226,7 +226,7 @@ class MDCClickCommand(FixedSubcommand):
             help = f'DATETIME (format: {" / ".join(formats)})'
         else:
             type = field.type
-            help = field.type.__name__.upper()
+            help = field.type.__name__
             if field.range:
                 help += f' ({field.range.start}-{field.range.stop - 1})'
 
@@ -353,26 +353,25 @@ class MDCTargetParamType(click.ParamType):
                 self.fail(
                     f'FILENAME "{value}" does not exist.\n'
                     f'Format: {param.help}')
-            else:
-                data = open(value).read()
-                data = [
-                    (i + 1, line.strip())
-                    for i, line in enumerate(data.split('\n'))
-                    if line.strip() and not line.strip().startswith('#')
-                ]
-                targets = []
-                for lineno, line in data:
-                    try:
-                        targets.append(self.convert_target(line, param, ctx))
-                    except click.UsageError as exc:
-                        exc.message = (f'{value}:{lineno}: "{line}": '
-                                       f'{exc.message}')
-                        raise
-                if not targets:
-                    self.fail(
-                        f'FILENAME "{value} is empty.\n'
-                        f'Format: {param.help}')
-                return targets
+            data = open(value).read()
+            data = [
+                (i + 1, line.strip())
+                for i, line in enumerate(data.split('\n'))
+                if line.strip() and not line.strip().startswith('#')
+            ]
+            targets = []
+            for lineno, line in data:
+                try:
+                    targets.append(self.convert_target(line, param, ctx))
+                except click.UsageError as exc:
+                    exc.message = (f'{value}:{lineno}: "{line}": '
+                                   f'{exc.message}')
+                    raise
+            if not targets:
+                self.fail(
+                    f'FILENAME "{value} is empty.\n'
+                    f'Format: {param.help}')
+            return targets
 
 
 @click.group(cls=Group, help=(
@@ -394,8 +393,10 @@ class MDCTargetParamType(click.ParamType):
 @click.pass_context
 def cli(ctx, target, verbose, **kwargs):
     ctx.ensure_object(dict)
-    ctx.obj['targets'] = target
-    ctx.obj['target_kwargs'] = {'verbose': verbose, **kwargs}
+    ctx.obj['targets'] = [(
+        MDC(ip, port, **{'verbose': verbose, **kwargs}),
+        display_id
+    ) for display_id, ip, port in target]
     ctx.obj['verbose'] = verbose
 
 
@@ -403,10 +404,6 @@ def register_command(command):
     @click.pass_context
     def _cmd(ctx, **kwargs):
         mdc_call = ctx.command.create_mdc_call(kwargs)
-        targets = [(
-            MDC(ip, port, **ctx.obj['target_kwargs']),
-            display_id
-        ) for display_id, ip, port in ctx.obj['targets']]
         failed_targets = []
 
         async def call(connection, display_id):
@@ -420,12 +417,12 @@ def register_command(command):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(asyncio.wait([
             loop.create_task(call(*target))
-            for target in targets
+            for target in ctx.obj['targets']
         ]))
         loop.close()
 
         if failed_targets:
-            if len(targets) > 1:
+            if len(ctx.obj['targets']) > 1:
                 print('Failed targets:', len(failed_targets))
             ctx.exit(1)
 
@@ -448,6 +445,7 @@ It\'s highly recommended to use sleep option for virtual_remote!
 \b
 Additional commands:
 sleep SECONDS  (FLOAT, --sleep option for this command is ignored)
+disconnect
 
 \b
 Format:
@@ -456,7 +454,6 @@ command2 [ARGS]...
 
 \b
 Example: samsung-mdc ./targets.txt script -s 3 -r 1 ./commands.txt
-```
 # commands.txt content
 power on
 sleep 5
@@ -465,7 +462,6 @@ virtual_remote key_menu
 virtual_remote key_down
 virtual_remote enter
 clear_menu
-```
 """
 
 
@@ -545,10 +541,6 @@ def script(ctx, script_file, sleep, retry_command, retry_command_sleep,
                 fail(lineno, line, str(exc))
             calls.append(command.create_mdc_call(ctx.params))
 
-    targets = [(
-        MDC(ip, port, **ctx.obj['target_kwargs']),
-        display_id
-    ) for display_id, ip, port in ctx.obj['targets']]
     failed_targets = []
 
     async def call(connection, display_id):
@@ -589,12 +581,12 @@ def script(ctx, script_file, sleep, retry_command, retry_command_sleep,
     loop = asyncio.get_event_loop()
     loop.run_until_complete(asyncio.wait([
         loop.create_task(call(*target))
-        for target in targets
+        for target in ctx.obj['targets']
     ]))
     loop.close()
 
     # sleep(0)
     if failed_targets:
-        if len(targets) > 1:
+        if len(ctx.obj['targets']) > 1:
             print('Failed targets:', len(failed_targets))
         ctx.exit(1)
