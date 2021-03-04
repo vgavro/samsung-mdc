@@ -16,6 +16,10 @@ def get_usage_docs():
                 hint = command._get_params_hint().strip()
             else:
                 hint = ' '.join(command.collect_usage_pieces(ctx)).strip()
+            if hasattr(command, 'mdc_command'):
+                if not command.mdc_command.SET:
+                    hint = f'({hint})'
+
             hint = hint and f'`{hint}`' or ''
             rv += f'* [{name}](#{name}) {hint}\n'
 

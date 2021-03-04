@@ -54,16 +54,16 @@ Options:
 ```
 ### Commands:
 
-* [status](#status) `POWER_STATE VOLUME MUTE_STATE INPUT_SOURCE_STATE PICTURE_ASPECT_STATE N_TIME_NF F_TIME_NF`
-* [serial_number](#serial_number) `SERIAL_NUMBER`
-* [software_version](#software_version) `SOFTWARE_VERSION`
-* [model_number](#model_number) `MODEL_SPECIES MODEL_NUMBER TV_SUPPORT`
+* [status](#status) `(POWER_STATE VOLUME MUTE_STATE INPUT_SOURCE_STATE PICTURE_ASPECT_STATE N_TIME_NF F_TIME_NF)`
+* [serial_number](#serial_number) `(SERIAL_NUMBER)`
+* [software_version](#software_version) `(SOFTWARE_VERSION)`
+* [model_number](#model_number) `(MODEL_SPECIES MODEL_NUMBER TV_SUPPORT)`
 * [power](#power) `[POWER_STATE]`
 * [volume](#volume) `[VOLUME]`
 * [mute](#mute) `[MUTE_STATE]`
 * [input_source](#input_source) `[INPUT_SOURCE_STATE]`
 * [picture_aspect](#picture_aspect) `[PICTURE_ASPECT_STATE]`
-* [mdc_connection](#mdc_connection) `MDC_CONNECTION_TYPE`
+* [mdc_connection](#mdc_connection) `(MDC_CONNECTION_TYPE)`
 * [contrast](#contrast) `[CONTRAST]`
 * [brightness](#brightness) `[BRIGHTNESS]`
 * [sharpness](#sharpness) `[SHARPNESS]`
@@ -81,10 +81,10 @@ Options:
 * [inverse](#inverse) `[INVERSE_STATE]`
 * [safety_lock](#safety_lock) `[LOCK_STATE]`
 * [panel_lock](#panel_lock) `[LOCK_STATE]`
-* [device_name](#device_name) `DEVICE_NAME`
+* [device_name](#device_name) `(DEVICE_NAME)`
 * [osd](#osd) `[OSD_STATE]`
 * [all_keys_lock](#all_keys_lock) `[LOCK_STATE]`
-* [model_name](#model_name) `MODEL_NAME`
+* [model_name](#model_name) `(MODEL_NAME)`
 * [reset](#reset) `RESET_TARGET`
 * [osd_type](#osd_type) `[OSD_TYPE OSD_STATE]`
 * [timer_13](#timer_13) `TIMER_ID [ON_HOUR ON_MINUTE ON_DAY_PART ON_ACT OFF_HOUR OFF_MINUTE OFF_DAY_PART OFF_ACT REPEAT MANUAL_WEEKDAY VOLUME INPUT_SOURCE_STATE HOLIDAY_APPLY]`
