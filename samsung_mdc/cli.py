@@ -7,7 +7,6 @@
 
 from enum import Enum
 from datetime import datetime
-from functools import partial
 import asyncio
 import os.path
 from sys import argv as sys_argv
@@ -114,6 +113,37 @@ class ArgumentWithHelpCommandMixin:
         super().format_options(ctx, formatter)
 
 
+class FixedSubcommand(ArgumentWithHelpCommandMixin, click.Command):
+    # This mixin contains some common overrides and fixes for click
+    # subcommand processing
+
+    def parse_args(self, ctx, args):
+        # Avoid "Try 'samsung-mdc {command} --help' for help." message
+        # that renders in UsageError,
+        # because it's wrong command because of required group command args
+        # (maybe this will be fixed in future click versions?)
+        try:
+            super().parse_args(ctx, args)
+        except click.UsageError as exc:
+            exc.cmd = None
+            raise
+
+    def format_usage(self, ctx, formatter):
+        # 1. Invoking this on subcommand doesn't show group required arguments
+        # and options, so Usage is no valid in this case.
+        # 2. Invoking this on wrong context mess things up completely,
+        # but we need it from group context to be able to do
+        # "samsung-mdc --help command1"
+        # NOTE: this works only on 1-st level subcommand, for nesting
+        # you may want to make root parts recursive
+        root_path = ctx.command_path.split()[0]
+        root_command = ctx.parent and ctx.parent.command or ctx.command
+        pieces = click.Command.collect_usage_pieces(root_command, ctx)
+        pieces.append(self.name)
+        pieces.extend(self.collect_usage_pieces(ctx))
+        formatter.write_usage(root_path, " ".join(pieces))
+
+
 class Group(ArgumentWithHelpCommandMixin, click.Group):
     def get_help_option(self, ctx):
         # Override this to pass parameters to --help
@@ -151,13 +181,16 @@ class Group(ArgumentWithHelpCommandMixin, click.Group):
     def list_commands(self, ctx):
         # Avoid sorting commands by name, sort by CMD code instead
         # (as it goes in documentation)
-        return [c.name for c in sorted(
-            self.commands.values(),
-            key=lambda c: c.mdc_command.get_order()
-        )]
+
+        def key(c):
+            # not mdc commands ("script") should go last
+            return (hasattr(c, 'mdc_command')
+                    and c.mdc_command.get_order() or (1000,))
+
+        return [c.name for c in sorted(self.commands.values(), key=key)]
 
 
-class MDCClickCommand(ArgumentWithHelpCommandMixin, click.Command):
+class MDCClickCommand(FixedSubcommand):
     def __init__(self, name, mdc_command, **kwargs):
         self.mdc_command = mdc_command
         name = mdc_command.name
@@ -172,15 +205,15 @@ class MDCClickCommand(ArgumentWithHelpCommandMixin, click.Command):
 
         if isinstance(mdc_command.CMD, MDCField):
             kwargs['params'].append(
-                self._get_argument_from_mdc_field(mdc_command.CMD))
+                self._get_argument_from_mdc_field(mdc_command.CMD, 'cmd'))
 
         for i, field in enumerate(mdc_command.DATA):
             kwargs['params'].append(
-                self._get_argument_from_mdc_field(field))
+                self._get_argument_from_mdc_field(field, i))
 
         super().__init__(name, **kwargs)
 
-    def _get_argument_from_mdc_field(self, field):
+    def _get_argument_from_mdc_field(self, field, ident=None):
         if issubclass(field.type, Enum):
             type = EnumChoice(field.type)
             help = '|'.join(field.type.__members__.keys())
@@ -190,41 +223,33 @@ class MDCClickCommand(ArgumentWithHelpCommandMixin, click.Command):
                 "%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M",
             ]
             type = click.DateTime(formats)
-            help = f'datetime (format: {" / ".join(formats)})'
+            help = f'DATETIME (format: {" / ".join(formats)})'
         else:
             type = field.type
-            help = field.type.__name__
+            help = field.type.__name__.upper()
             if field.range:
                 help += f' ({field.range.start}-{field.range.stop - 1})'
 
         return ArgumentWithHelp(
-            [field.name], metavar=field.name, type=type, help=help)
+            [f'data_{ident}' if ident else field.name],
+            metavar=field.name, type=type, help=help)
 
     def _get_params_hint(self):
         params = ' '.join([f.name for f in self.mdc_command.DATA])
         if self.mdc_command.GET and self.mdc_command.SET and params:
             params = f'[{params}]'
         if isinstance(self.mdc_command.CMD, MDCField):
+            # parametrized CMD is always required argument
             params = f'{self.mdc_command.CMD.name} {params}'
         return params
 
-    def _get_params_usage(self):
-        if self.mdc_command.SET:
-            return self._get_params_hint()
-        return ''
-
-    def format_usage(self, ctx, formatter):
+    def collect_usage_pieces(self, ctx):
         # We need ALL arguments to be OR optional, OR required,
         # so we can't use required on arguments and need to show
         # it properly in usage string
-        params = self._get_params_usage()
-
-        # 2. Invoking this on wrong context doesn't show group command
-        # required arguments, but we need to invoke this
-        # from group context to be able to do "samsung-mdc --help command1"
-        params = f' {params}' if params else ''
-        formatter.write_usage(
-            'samsung-mdc', f'[OPTIONS] TARGET {self.name}{params}')
+        if self.mdc_command.SET:
+            return [self._get_params_hint()]
+        return []
 
     def parse_args(self, ctx, args):
         # We need ALL arguments to be OR optional, OR required,
@@ -236,22 +261,13 @@ class MDCClickCommand(ArgumentWithHelpCommandMixin, click.Command):
         if isinstance(self.mdc_command.CMD, MDCField):
             if self.mdc_command.GET and len(args) == 1:
                 if '--help' in sys_argv:
-                    super().parse_args(ctx, args)
+                    return super().parse_args(ctx, args)
 
                 parser = self.make_parser(ctx)
                 opts, args, param_order = parser.parse_args(args=args)
                 for param in self.get_params(ctx):
-                    try:
-                        value, args = param.handle_parse_result(
-                            ctx, opts, args)
-                    except click.UsageError as exc:
-                        # Avoid "Try 'samsung-mdc {command} --help' for help."
-                        # that renders in UsageError,
-                        # because it's wrong command because of required group
-                        # command args
-                        # (maybe this will be fixed in future click versions?)
-                        exc.cmd = None
-                        raise
+                    value, args = param.handle_parse_result(
+                        ctx, opts, args)
                     break  # after first argument
 
                 ctx.args = args
@@ -261,22 +277,39 @@ class MDCClickCommand(ArgumentWithHelpCommandMixin, click.Command):
             ctx.args = args
             return args
 
-        # Avoid "Try 'samsung-mdc {command} --help' for help." message
-        # that renders in UsageError,
-        # because it's wrong command because of required group command args
-        # (maybe this will be fixed in future click versions?)
         try:
             super().parse_args(ctx, args)
         except click.UsageError as exc:
-            exc.cmd = None
-
             # Avoid parameters validation on GET-only commands
             if not self.mdc_command.SET:
                 exc = click.UsageError('Readonly command doesn\'t accept '
                                        'any arguments', ctx)
-                exc.cmd = None
+                exc.cmd = None  # see FixedSubcommand for reason
                 raise exc
             raise
+
+    def create_mdc_call(self, params):
+        args = tuple(params.values())
+        if isinstance(self.mdc_command.CMD, MDCField):
+            args = args[0], args[1:]
+        else:
+            args = [args] if args else []
+
+        if args and not self.mdc_command.SET:
+            raise click.UsageError('Readonly command doesn\'t accept '
+                                   'any arguments')
+
+        async def mdc_call(connection, display_id):
+            try:
+                print(f'{display_id}@{connection.ip}:{connection.port}',
+                      await self.mdc_command(connection, display_id, *args))
+            except Exception as exc:
+                print(f'{display_id}@{connection.ip}:{connection.port}',
+                      f'{exc.__class__.__name__}: {exc}')
+                raise
+        mdc_call.name = self.name
+        mdc_call.args = args
+        return mdc_call
 
 
 class MDCTargetParamType(click.ParamType):
@@ -322,14 +355,18 @@ class MDCTargetParamType(click.ParamType):
                     f'Format: {param.help}')
             else:
                 data = open(value).read()
-                data = [line.strip() for line in data.split('\n')
-                        if line.strip()]
+                data = [
+                    (i + 1, line.strip())
+                    for i, line in enumerate(data.split('\n'))
+                    if line.strip() and not line.strip().startswith('#')
+                ]
                 targets = []
-                for i, line in enumerate(data):
+                for lineno, line in data:
                     try:
                         targets.append(self.convert_target(line, param, ctx))
                     except click.UsageError as exc:
-                        exc.message = f'{value}:{i}: {exc.message}'
+                        exc.message = (f'{value}:{lineno}: "{line}": '
+                                       f'{exc.message}')
                         raise
                 if not targets:
                     self.fail(
@@ -338,57 +375,51 @@ class MDCTargetParamType(click.ParamType):
                 return targets
 
 
-@click.group(
-    cls=Group,
-    help="Try 'samsung-mdc --help COMMAND' for command info")
+@click.group(cls=Group, help=(
+    "Try 'samsung-mdc --help COMMAND' for command info\n\n"
+    "For multiple targets commands will be running async, so result order "
+    "may differ."
+))
 @click.argument('target', metavar='TARGET', help=(
         'DISPLAY_ID@IP[:PORT] (default port: 1515) '
         '(example: 1@192.168.0.10:1515) '
         'or FILENAME with target list'
     ), type=MDCTargetParamType(), cls=ArgumentWithHelp)
 @click.option('-v', '--verbose', is_flag=True, default=False, type=bool)
+@click.option(
+    '--timeout', default=3, type=float, help=(
+        'read/write/connect timeout in seconds (default: 3) '
+        '(connect can be overrided with separate option)'))
+@click.option('--connect-timeout', default=None, type=float)
 @click.pass_context
-def cli(ctx, target, verbose):
+def cli(ctx, target, verbose, **kwargs):
     ctx.ensure_object(dict)
     ctx.obj['targets'] = target
+    ctx.obj['target_kwargs'] = {'verbose': verbose, **kwargs}
     ctx.obj['verbose'] = verbose
 
 
 def register_command(command):
     @click.pass_context
     def _cmd(ctx, **kwargs):
-        call_args = tuple(kwargs.values())
-        if isinstance(command.CMD, MDCField):
-            call_args = call_args[0], call_args[1:]
-        else:
-            call_args = [call_args] if call_args else []
-
-        if call_args and not command.SET:
-            raise click.UsageError('Readonly command doesn\'t accept '
-                                   'any arguments')
-
+        mdc_call = ctx.command.create_mdc_call(kwargs)
         targets = [(
-            display_id, ip, port, partial(
-                command,
-                MDC(ip, port, verbose=ctx.obj['verbose']),
-                display_id
-            )) for display_id, ip, port in ctx.obj['targets']
-        ]
+            MDC(ip, port, **ctx.obj['target_kwargs']),
+            display_id
+        ) for display_id, ip, port in ctx.obj['targets']]
         failed_targets = []
 
-        async def print_call(display_id, ip, port, call):
+        async def call(connection, display_id):
             try:
-                print(f'{display_id}@{ip}:{port}', await call(*call_args))
+                await mdc_call(connection, display_id)
             except Exception as exc:
-                failed_targets.append((display_id, ip, port, call))
-                print(f'{display_id}@{ip}:{port}',
-                      f'{exc.__class__.__name__}: {exc}')
+                failed_targets.append((connection, display_id, exc))
                 if ctx.obj['verbose']:
                     raise
 
         loop = asyncio.get_event_loop()
         loop.run_until_complete(asyncio.wait([
-            loop.create_task(print_call(*target))
+            loop.create_task(call(*target))
             for target in targets
         ]))
         loop.close()
@@ -403,3 +434,167 @@ def register_command(command):
 
 for command in MDC._commands.values():
     register_command(command)
+
+
+SCRIPT_HELP = """
+Script file with commands to execute.
+
+Commands for multiple targets will be running async, but
+commands order is preserved for device (and is running on same connection),
+exit on first fail unless retry options provided.
+
+It\'s highly recommended to use sleep option for virtual_remote!
+
+\b
+Additional commands:
+sleep SECONDS  (FLOAT, --sleep option for this command is ignored)
+
+\b
+Format:
+command1 [ARGS]...
+command2 [ARGS]...
+
+\b
+Example: samsung-mdc ./targets.txt script -s 3 -r 1 ./commands.txt
+```
+# commands.txt content
+power on
+sleep 5
+clear_menu
+virtual_remote key_menu
+virtual_remote key_down
+virtual_remote enter
+clear_menu
+```
+"""
+
+
+@cli.command(help=SCRIPT_HELP, cls=FixedSubcommand)
+@click.option('-s', '--sleep', default=0, type=float,
+              help='Pause between commands (seconds)')
+@click.option('--retry-command', default=0, type=int,
+              help='Retry command if failed (count)')
+@click.option('--retry-command-sleep', default=0, type=float,
+              help='Sleep before command retry (seconds)')
+@click.option('-r', '--retry-script', default=0, type=int,
+              help='Retry script if failed (count)')
+@click.option('--retry-script-sleep', default=0, type=float,
+              help='Sleep before script retry (seconds)')
+@click.argument('script_file', type=click.File(),
+                help='Text file with commands, separated by newline.',
+                cls=ArgumentWithHelp)
+@click.pass_context
+def script(ctx, script_file, sleep, retry_command, retry_command_sleep,
+           retry_script, retry_script_sleep):
+    import shlex
+
+    retry_command_sleep = retry_command_sleep or sleep
+    retry_script_sleep = retry_script_sleep or sleep
+
+    def fail(lineno, line, reason):
+        raise click.UsageError(
+            f'{script_file.name}:{lineno}: "{line}": {reason}')
+
+    def create_disconnect():
+        async def disconnect(connection, display_id):
+            await connection.close()
+            return tuple()
+        disconnect.name = 'disconnect'
+        disconnect.args = []
+        return disconnect
+
+    def create_sleep(seconds):
+        async def sleep(connection, display_id):
+            await asyncio.sleep(seconds)
+            return tuple()
+        sleep.name = 'sleep'
+        sleep.args = [seconds]
+        return sleep
+
+    lines = [
+        (i + 1, line.strip())
+        for i, line in enumerate(script_file.read().split('\n'))
+        if line.strip() and not line.strip().startswith('#')
+    ]
+    calls = []
+    for lineno, line in lines:
+        command, *args = shlex.split(line)
+        command = command.lower()
+        if (command not in cli.commands
+           and command not in ['sleep', 'disconnect']):
+            fail(lineno, line, f'Unknown command: {command}')
+        if command == 'sleep':
+            if len(args) != 1:
+                fail(lineno, line, 'Sleep command accept exactly one argument')
+            try:
+                seconds = float(args[0])
+            except ValueError as exc:
+                fail(lineno, line, f'Sleep argument must be int/float: {exc}')
+            calls.append(create_sleep(seconds))
+        elif command == 'disconnect':
+            if len(args):
+                fail(lineno, line, 'Disconnect command does not accept '
+                     'arguments')
+            calls.append(create_disconnect())
+        else:
+            ctx.params.clear()
+            command = cli.commands[command]
+            try:
+                command.parse_args(ctx, args)
+            except click.UsageError as exc:
+                fail(lineno, line, str(exc))
+            calls.append(command.create_mdc_call(ctx.params))
+
+    targets = [(
+        MDC(ip, port, **ctx.obj['target_kwargs']),
+        display_id
+    ) for display_id, ip, port in ctx.obj['targets']]
+    failed_targets = []
+
+    async def call(connection, display_id):
+        last_exc = None
+        for retry_script_i in range(retry_script + 1):
+            if retry_script_i and retry_script_sleep:
+                await asyncio.sleep(retry_script_sleep)
+            for command_i, call_ in enumerate(calls):
+                if command_i and call_.name != 'sleep' and sleep:
+                    await asyncio.sleep(sleep)
+                for retry_command_i in range(retry_command + 1):
+                    if retry_command_i and retry_command_sleep:
+                        await asyncio.sleep(retry_command_sleep)
+                    if ctx.obj['verbose']:
+                        print(
+                            f'{display_id}@{connection.ip}:{connection.port}',
+                            f'{retry_script_i}:{command_i}:{retry_command_i}',
+                            f'{call_.name}: {call_.args}')
+                    try:
+                        await call_(connection, display_id)
+                    except Exception as exc:
+                        last_exc = exc
+                    else:
+                        last_exc = None
+                        break
+                if last_exc is not None:
+                    break
+            if last_exc is None:
+                break
+
+        if last_exc is not None:
+            failed_targets.append((connection, display_id, last_exc))
+            print(f'{display_id}@{connection.ip}:{connection.port}',
+                  f'Script failed indefinitely: {last_exc}')
+            if ctx.obj['verbose']:
+                raise last_exc
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(asyncio.wait([
+        loop.create_task(call(*target))
+        for target in targets
+    ]))
+    loop.close()
+
+    # sleep(0)
+    if failed_targets:
+        if len(targets) > 1:
+            print('Failed targets:', len(failed_targets))
+        ctx.exit(1)

@@ -15,5 +15,7 @@ class MDC(MDCConnection):
 
 
 for name, cls in inspect.getmembers(commands, inspect.isclass):
-    if issubclass(cls, Command) and not name.startswith('_'):
+    if (issubclass(cls, Command)
+       and cls is not Command
+       and not name.startswith('_')):
         MDC.register_command(cls())

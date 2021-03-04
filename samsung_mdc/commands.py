@@ -224,7 +224,7 @@ class CLEAR_MENU(Command):
     DATA = []
 
 
-class IR_LOCK(Command):
+class IR_STATE(Command):
     """
     Enables/disables IR (Infrared) receiving function (Remote Control).
 
@@ -592,7 +592,7 @@ class VIRTUAL_REMOTE(Command):
         KEY_ENTER = 0x68
         KEY_RED = 0x6C
         KEY_LOCK = 0x77
-        KEY_CONTENT = 0x79
+        KEY_CONTENT = 0x79  # HOME
         DISCRET_POWER_OFF = 0x98
         KEY_3D = 0x9F
 

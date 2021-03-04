@@ -26,10 +26,10 @@ async def wait_for(aw, timeout, reason):
 class MDCConnection:
     reader, writer = None, None
 
-    def __init__(self, ip, port=1515, timeout=3, connection_timeout=None,
+    def __init__(self, ip, port=1515, timeout=3, connect_timeout=None,
                  verbose=False):
         self.ip, self.port, self.timeout = ip, port, timeout
-        self.connection_timeout = connection_timeout or timeout
+        self.connect_timeout = connect_timeout or timeout
         self.verbose = (
             partial(print, f'{ip}:{port}') if verbose is True else verbose)
 
@@ -38,11 +38,11 @@ class MDCConnection:
         self.reader, self.writer = \
             await wait_for(
                 asyncio.open_connection(self.ip, self.port),
-                self.connection_timeout, 'Connection timeout')
+                self.connect_timeout, 'Connect timeout')
 
     @property
     def is_opened(self):
-        self.writer is not None
+        return self.writer is not None
 
     async def send(self, cmd: Union[int, Tuple[int, int]], id: int,
                    data: Union[bytes, Sequence] = b''):
