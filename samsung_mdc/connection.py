@@ -1,5 +1,6 @@
 from typing import Union, Sequence, Tuple
 from functools import partial
+from enum import Enum
 import asyncio
 
 from .exceptions import MDCResponseError, MDCTimeoutError
@@ -23,22 +24,49 @@ async def wait_for(aw, timeout, reason):
         raise MDCTimeoutError(reason) from exc
 
 
+class MDC_CONNECTION_MODE(Enum):
+    TCP = 'tcp'
+    SERIAL = 'serial'
+
+
 class MDCConnection:
     reader, writer = None, None
 
-    def __init__(self, ip, port=1515, timeout=3, connect_timeout=None,
-                 verbose=False):
-        self.ip, self.port, self.timeout = ip, port, timeout
+    def __init__(self, target, mode=MDC_CONNECTION_MODE.TCP, timeout=5,
+                 connect_timeout=None, verbose=False, **connection_kwargs):
+        self.target = target
+        self.mode = MDC_CONNECTION_MODE(mode)
+        self.connection_kwargs = connection_kwargs
+
+        self.timeout = timeout
         self.connect_timeout = connect_timeout or timeout
         self.verbose = (
-            partial(print, f'{ip}:{port}') if verbose is True else verbose)
+            partial(print, self.target) if verbose is True else verbose)
 
     async def open(self):
-        # opens TCP connection
-        self.reader, self.writer = \
-            await wait_for(
-                asyncio.open_connection(self.ip, self.port),
-                self.connect_timeout, 'Connect timeout')
+        if self.mode == MDC_CONNECTION_MODE.TCP:
+            if isinstance(self.target, (list, tuple)):
+                # make target be compatible with socket.__init__
+                target, port = self.target
+            else:
+                target, *port = self.target.split(':')
+                port = port and int(port[0]) or 1515
+            self.connection_kwargs.setdefault('port', port)
+
+            self.reader, self.writer = \
+                await wait_for(
+                    asyncio.open_connection(target, **self.connection_kwargs),
+                    self.connect_timeout, 'Connect timeout')
+        else:
+            # Make this package optional
+            from serial_asyncio import open_serial_connection
+
+            self.reader, self.writer = \
+                await wait_for(
+                    open_serial_connection(
+                        url=self.target,
+                        **self.connection_kwargs),
+                    self.connect_timeout, 'Connect timeout')
 
     @property
     def is_opened(self):
@@ -60,15 +88,17 @@ class MDCConnection:
         if not self.is_opened:
             await self.open()
             if self.verbose:
-                self.verbose(f'{self.ip}:{self.port}', 'Connected')
+                self.verbose('Connected')
 
         self.writer.write(payload)
         await wait_for(self.writer.drain(), self.timeout, 'Write timeout')
         if self.verbose:
-            self.verbose(f'{self.ip}:{self.port}', 'Sent', _repr_hex(payload))
+            self.verbose('Sent', _repr_hex(payload))
 
         resp = await wait_for(self.reader.read(4), self.timeout,
                               'Response header read timeout')
+        if not resp:
+            raise MDCResponseError('Empty response', resp)
         if resp[0] != HEADER_CODE:
             raise MDCResponseError('Unexpected header', resp)
         if resp[1] != RESPONSE_CMD:
@@ -78,7 +108,7 @@ class MDCConnection:
         resp += await wait_for(self.reader.read(resp[3] + 1), self.timeout,
                                'Response data read timeout')
         if self.verbose:
-            self.verbose(f'{self.ip}:{self.port}', 'Recv', _repr_hex(resp))
+            self.verbose('Recv', _repr_hex(resp))
 
         checksum = sum(resp[1:-1]) % 256
         if checksum != int(resp[-1]):

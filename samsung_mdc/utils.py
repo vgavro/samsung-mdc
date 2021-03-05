@@ -1,10 +1,32 @@
+from enum import Enum
 from datetime import datetime
 
 
-def bit_unmask(val, length=None):
+def _bit_unmask(val, length=None):
     rv = tuple(reversed(tuple(int(x) for x in tuple('{0:0b}'.format(val)))))
     if length and len(rv) < length:
         return rv + ((0,) * (length - len(rv)))
+    return rv
+
+
+def parse_enum_bitmask(enum, value):
+    """
+    Returns tuple of enum values, which was set to 1 in bitmask
+    """
+    return tuple(
+        enum(i)
+        for i, x in enumerate(
+            _bit_unmask(value, length=len(enum)))
+        if x
+    )
+
+
+def pack_bitmask(values):
+    rv = 0
+    for val in values:
+        if isinstance(val, Enum):
+            val = val.value
+        rv |= (1 << val)
     return rv
 
 

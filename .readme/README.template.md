@@ -1,6 +1,6 @@
 # Samsung-MDC
 
-This is implementation of Samsung MDC (Multiple Display Control) protocol using python3.7+ and asyncio with most comprehensive CLI (command line interface).
+This is implementation of Samsung MDC (Multiple Display Control) protocol on **python3.7+** and **asyncio** with most comprehensive CLI (command line interface).
 
 It allows you to control a variety of different sources (TV, Monitor) through the built-in RS-232C or Ethernet interface.
 
@@ -9,10 +9,11 @@ It allows you to control a variety of different sources (TV, Monitor) through th
 * Implemented *{{command_count}}* commands
 * Easy to extend using simple declarative API - see [samsung_mdc/commmands.py](samsung_mdc/commands.py)
 * Detailed CLI help and parameters validation
-* Run commands async on numerous targets
+* Run commands async on numerous targets (using asyncio)
+* TCP and SERIAL mode (for RJ45 and RS232C connection types)
 * [script](#script) command for advanced usage
 
-Not implemented: RS232C, some more commands (PRs are welcome)
+Not implemented: some more commands (PRs are welcome)
 
 ## Install
 

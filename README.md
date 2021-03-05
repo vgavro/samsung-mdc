@@ -1,18 +1,19 @@
 # Samsung-MDC
 
-This is implementation of Samsung MDC (Multiple Display Control) protocol using python3.7+ and asyncio with most comprehensive CLI (command line interface).
+This is implementation of Samsung MDC (Multiple Display Control) protocol on **python3.7+** and **asyncio** with most comprehensive CLI (command line interface).
 
 It allows you to control a variety of different sources (TV, Monitor) through the built-in RS-232C or Ethernet interface.
 
 [MDC Protocol specification - v13.7c 2016-02-23](MDC-Protocol_v13.7c_2016-02-23.pdf)
 
-* Implemented *44* commands
+* Implemented *45* commands
 * Easy to extend using simple declarative API - see [samsung_mdc/commmands.py](samsung_mdc/commands.py)
 * Detailed CLI help and parameters validation
-* Run commands async on numerous targets
+* Run commands async on numerous targets (using asyncio)
+* TCP and SERIAL mode (for RJ45 and RS232C connection types)
 * [script](#script) command for advanced usage
 
-Not implemented: RS232C, some more commands (PRs are welcome)
+Not implemented: some more commands (PRs are welcome)
 
 ## Install
 
@@ -38,18 +39,27 @@ Usage: samsung-mdc [OPTIONS] TARGET COMMAND [ARGS]...
   For multiple targets commands will be running async, so result order may
   differ.
 
-Arguments:
-  TARGET  DISPLAY_ID@IP[:PORT] (default port: 1515) (example:
-          1@192.168.0.10:1515) or FILENAME with target list
+  TARGET may be:
 
+  DISPLAY_ID@IP[:PORT] (default port: 1515, example: 0@192.168.0.10:1515)
+  FILENAME with target list (separated by newline)
+
+  For serial port connection:
+  DISPLAY_ID@PORT_NAME for Windows (example: 1@COM1)
+  DISPLAY_ID@PORT_PATH (example: 1@/dev/ttyUSB0)
+
+  We're trying to make autodetection of connection mode by port name, but
+  you may want to use --mode option.
 
 Options:
   -v, --verbose
-  --timeout FLOAT          read/write/connect timeout in seconds (default: 3)
-                           (connect can be overrided with separate option)
+  -m, --mode [auto|tcp|serial]  default: auto
+  -t, --timeout FLOAT           read/write/connect timeout in seconds
+                                (default: 5) (connect can be overrided with
+                                separate option)
 
   --connect-timeout FLOAT
-  -h, --help               Show this message and exit.
+  -h, --help                    Show this message and exit.
 
 ```
 ### Commands:
@@ -76,19 +86,20 @@ Options:
 * [rgb_contrast](#rgb_contrast) `[CONTRAST]`
 * [rgb_brightness](#rgb_brightness) `[BRIGHTNESS]`
 * [auto_adjustment_on](#auto_adjustment_on) 
-* [auto_lamp](#auto_lamp) `[AUTO_LAMP_MAX_HOUR AUTO_LAMP_MAX_MINUTE AUTO_LAMP_MAX_DAY_PART AUTO_LAMP_MAX_VALUE AUTO_LAMP_MIN_HOUR AUTO_LAMP_MIN_MINUTE AUTO_LAMP_MIN_DAY_PART AUTO_LAMP_MIN_VALUE]`
+* [standby](#standby) `[STANDBY_STATE]`
+* [auto_lamp](#auto_lamp) `[MAX_TIME MAX_LAMP_VALUE MIN_TIME MIN_LAMP_VALUE]`
 * [manual_lamp](#manual_lamp) `[LAMP_VALUE]`
 * [inverse](#inverse) `[INVERSE_STATE]`
 * [safety_lock](#safety_lock) `[LOCK_STATE]`
 * [panel_lock](#panel_lock) `[LOCK_STATE]`
 * [device_name](#device_name) `(DEVICE_NAME)`
-* [osd](#osd) `[OSD_STATE]`
+* [osd](#osd) `[OSD_ENABLED]`
 * [all_keys_lock](#all_keys_lock) `[LOCK_STATE]`
 * [model_name](#model_name) `(MODEL_NAME)`
 * [reset](#reset) `RESET_TARGET`
-* [osd_type](#osd_type) `[OSD_TYPE OSD_STATE]`
-* [timer_13](#timer_13) `TIMER_ID [ON_HOUR ON_MINUTE ON_DAY_PART ON_ACT OFF_HOUR OFF_MINUTE OFF_DAY_PART OFF_ACT REPEAT MANUAL_WEEKDAY VOLUME INPUT_SOURCE_STATE HOLIDAY_APPLY]`
-* [timer_15](#timer_15) `TIMER_ID [ON_HOUR ON_MINUTE ON_DAY_PART ON_ACT OFF_HOUR OFF_MINUTE OFF_DAY_PART OFF_ACT ON_REPEAT ON_MANUAL_WEEKDAY OFF_REPEAT OFF_MANUAL_WEEKDAY VOLUME INPUT_SOURCE_STATE HOLIDAY_APPLY]`
+* [osd_type](#osd_type) `[OSD_TYPE OSD_ENABLED]`
+* [timer_13](#timer_13) `TIMER_ID [ON_TIME ON_ENABLED OFF_TIME OFF_ENABLED VOLUME INPUT_SOURCE_STATE HOLIDAY_APPLY REPEAT MANUAL_WEEKDAY]`
+* [timer_15](#timer_15) `TIMER_ID [ON_TIME ON_ENABLED OFF_TIME OFF_ENABLED ON_REPEAT ON_MANUAL_WEEKDAY OFF_REPEAT OFF_MANUAL_WEEKDAY VOLUME INPUT_SOURCE_STATE HOLIDAY_APPLY]`
 * [clock_m](#clock_m) `[DATETIME]`
 * [virtual_remote](#virtual_remote) `REMOTE_KEY_CODE`
 * [network_standby](#network_standby) `[NETWORK_STANDBY_STATE]`
@@ -286,27 +297,28 @@ Data:
 ```
 Usage: samsung-mdc [OPTIONS] TARGET auto_adjustment_on
 ```
+#### standby
+```
+Usage: samsung-mdc [OPTIONS] TARGET standby [STANDBY_STATE]
+
+Data:
+  STANDBY_STATE  OFF | ON | AUTO
+```
 #### auto_lamp
 ```
-Usage: samsung-mdc [OPTIONS] TARGET auto_lamp [AUTO_LAMP_MAX_HOUR
-                   AUTO_LAMP_MAX_MINUTE AUTO_LAMP_MAX_DAY_PART
-                   AUTO_LAMP_MAX_VALUE AUTO_LAMP_MIN_HOUR AUTO_LAMP_MIN_MINUTE
-                   AUTO_LAMP_MIN_DAY_PART AUTO_LAMP_MIN_VALUE]
+Usage: samsung-mdc [OPTIONS] TARGET auto_lamp [MAX_TIME MAX_LAMP_VALUE
+                   MIN_TIME MIN_LAMP_VALUE]
 
-  Auto Lamp function.
+  Auto Lamp function (backlight).
 
   Note: When Manual Lamp Control is on, Auto Lamp Control will automatically
   turn off.
 
 Data:
-  AUTO_LAMP_MAX_HOUR      int (1-12)
-  AUTO_LAMP_MAX_MINUTE    int (0-59)
-  AUTO_LAMP_MAX_DAY_PART  PM | AM
-  AUTO_LAMP_MAX_VALUE     int (0-100)
-  AUTO_LAMP_MIN_HOUR      int (1-12)
-  AUTO_LAMP_MIN_MINUTE    int (0-59)
-  AUTO_LAMP_MIN_DAY_PART  PM | AM
-  AUTO_LAMP_MIN_VALUE     int (0-100)
+  MAX_TIME        time (format: %H:%M:%S)
+  MAX_LAMP_VALUE  int (0-100)
+  MIN_TIME        time (format: %H:%M:%S)
+  MIN_LAMP_VALUE  int (0-100)
 ```
 #### manual_lamp
 ```
@@ -353,10 +365,10 @@ Data:
 ```
 #### osd
 ```
-Usage: samsung-mdc [OPTIONS] TARGET osd [OSD_STATE]
+Usage: samsung-mdc [OPTIONS] TARGET osd [OSD_ENABLED]
 
 Data:
-  OSD_STATE  OFF | ON
+  OSD_ENABLED  bool
 ```
 #### all_keys_lock
 ```
@@ -385,18 +397,17 @@ Data:
 ```
 #### osd_type
 ```
-Usage: samsung-mdc [OPTIONS] TARGET osd_type [OSD_TYPE OSD_STATE]
+Usage: samsung-mdc [OPTIONS] TARGET osd_type [OSD_TYPE OSD_ENABLED]
 
 Data:
-  OSD_TYPE   SOURCE | NOT_OPTIMUM_MODE | NO_SIGNAL | MDC | SCHEDULE_CHANNEL
-  OSD_STATE  OFF | ON
+  OSD_TYPE     SOURCE | NOT_OPTIMUM_MODE | NO_SIGNAL | MDC | SCHEDULE_CHANNEL
+  OSD_ENABLED  bool
 ```
 #### timer_13
 ```
-Usage: samsung-mdc [OPTIONS] TARGET timer_13 TIMER_ID [ON_HOUR ON_MINUTE
-                   ON_DAY_PART ON_ACT OFF_HOUR OFF_MINUTE OFF_DAY_PART OFF_ACT
-                   REPEAT MANUAL_WEEKDAY VOLUME INPUT_SOURCE_STATE
-                   HOLIDAY_APPLY]
+Usage: samsung-mdc [OPTIONS] TARGET timer_13 TIMER_ID [ON_TIME ON_ENABLED
+                   OFF_TIME OFF_ENABLED VOLUME INPUT_SOURCE_STATE
+                   HOLIDAY_APPLY REPEAT MANUAL_WEEKDAY]
 
   Integrated timer function (13 parameters version).
 
@@ -404,18 +415,10 @@ Usage: samsung-mdc [OPTIONS] TARGET timer_13 TIMER_ID [ON_HOUR ON_MINUTE
 
 Data:
   TIMER_ID            int (1-7)
-  ON_HOUR             int (1-12)
-  ON_MINUTE           int (0-59)
-  ON_DAY_PART         PM | AM
-  ON_ACT              bool
-  OFF_HOUR            int (1-12)
-  OFF_MINUTE          int (0-59)
-  OFF_DAY_PART        PM | AM
-  OFF_ACT             bool
-  REPEAT              ONCE | EVERYDAY | MON_FRI | MON_SAT | SAT_SUN |
-                      MANUAL_WEEKDAY
-
-  MANUAL_WEEKDAY      int
+  ON_TIME             time (format: %H:%M:%S)
+  ON_ENABLED          bool
+  OFF_TIME            time (format: %H:%M:%S)
+  OFF_ENABLED         bool
   VOLUME              int (0-100)
   INPUT_SOURCE_STATE  S_VIDEO | COMPONENT | AV | AV2 | SCART1 | DVI | PC | BNC
                       | DVI_VIDEO | MAGIC_INFO | HDMI1 | HDMI1_PC | HDMI2 |
@@ -428,36 +431,43 @@ Data:
   HOLIDAY_APPLY       DONT_APPLY_BOTH | APPLY_BOTH | ON_TIMER_ONLY_APPLY |
                       OFF_TIMER_ONLY_APPLY
 
+  REPEAT              ONCE | EVERYDAY | MON_FRI | MON_SAT | SAT_SUN |
+                      MANUAL_WEEKDAY
+
+  MANUAL_WEEKDAY      list(,) SUN | MON | TUE | WED | THU | FRI | SAT
 ```
 #### timer_15
 ```
-Usage: samsung-mdc [OPTIONS] TARGET timer_15 TIMER_ID [ON_HOUR ON_MINUTE
-                   ON_DAY_PART ON_ACT OFF_HOUR OFF_MINUTE OFF_DAY_PART OFF_ACT
-                   ON_REPEAT ON_MANUAL_WEEKDAY OFF_REPEAT OFF_MANUAL_WEEKDAY
-                   VOLUME INPUT_SOURCE_STATE HOLIDAY_APPLY]
+Usage: samsung-mdc [OPTIONS] TARGET timer_15 TIMER_ID [ON_TIME ON_ENABLED
+                   OFF_TIME OFF_ENABLED ON_REPEAT ON_MANUAL_WEEKDAY OFF_REPEAT
+                   OFF_MANUAL_WEEKDAY VOLUME INPUT_SOURCE_STATE HOLIDAY_APPLY]
 
   Integrated timer function (15 parameters version).
 
   Note: This depends on product and will not work on older versions.
 
+  ON_TIME/OFF_TIME - Turn ON/OFF display at specific time of day
+
+  ON_ACTIVE/OFF_ACTIVE - If timer is not active, values are ignored, so
+  there may be only OFF timer, ON timer, or both.
+
+  REPEAT - On which day timer is enabled (combined with HOLIDAY_APPLY and
+  MANUAL_WEEKDAY)
+
 Data:
   TIMER_ID            int (1-7)
-  ON_HOUR             int (1-12)
-  ON_MINUTE           int (0-59)
-  ON_DAY_PART         PM | AM
-  ON_ACT              bool
-  OFF_HOUR            int (1-12)
-  OFF_MINUTE          int (0-59)
-  OFF_DAY_PART        PM | AM
-  OFF_ACT             bool
+  ON_TIME             time (format: %H:%M:%S)
+  ON_ENABLED          bool
+  OFF_TIME            time (format: %H:%M:%S)
+  OFF_ENABLED         bool
   ON_REPEAT           ONCE | EVERYDAY | MON_FRI | MON_SAT | SAT_SUN |
                       MANUAL_WEEKDAY
 
-  ON_MANUAL_WEEKDAY   int
+  ON_MANUAL_WEEKDAY   list(,) SUN | MON | TUE | WED | THU | FRI | SAT
   OFF_REPEAT          ONCE | EVERYDAY | MON_FRI | MON_SAT | SAT_SUN |
                       MANUAL_WEEKDAY
 
-  OFF_MANUAL_WEEKDAY  int
+  OFF_MANUAL_WEEKDAY  list(,) SUN | MON | TUE | WED | THU | FRI | SAT
   VOLUME              int (0-100)
   INPUT_SOURCE_STATE  S_VIDEO | COMPONENT | AV | AV2 | SCART1 | DVI | PC | BNC
                       | DVI_VIDEO | MAGIC_INFO | HDMI1 | HDMI1_PC | HDMI2 |
@@ -481,7 +491,7 @@ Usage: samsung-mdc [OPTIONS] TARGET clock_m [DATETIME]
   CLOCK_S function (seconds precision).
 
 Data:
-  DATETIME  DATETIME (format: %Y-%m-%dT%H:%M:%S / %Y-%m-%d %H:%M:%S /
+  DATETIME  datetime (format: %Y-%m-%dT%H:%M:%S / %Y-%m-%d %H:%M:%S /
             %Y-%m-%dT%H:%M / %Y-%m-%d %H:%M)
 
 ```
@@ -538,7 +548,7 @@ Usage: samsung-mdc [OPTIONS] TARGET clock_s [DATETIME]
   CLOCK_M function (minute precision).
 
 Data:
-  DATETIME  DATETIME (format: %Y-%m-%dT%H:%M:%S / %Y-%m-%d %H:%M:%S /
+  DATETIME  datetime (format: %Y-%m-%dT%H:%M:%S / %Y-%m-%d %H:%M:%S /
             %Y-%m-%dT%H:%M / %Y-%m-%d %H:%M)
 
 ```

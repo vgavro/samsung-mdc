@@ -1,9 +1,8 @@
 from enum import Enum
-from datetime import datetime
 
-from .utils import bit_unmask, parse_mdc_time, pack_mdc_time
-from .command import Command, Field
-from .exceptions import MDCResponseError
+from .command import Command
+from .fields import Enum as EnumField, Int, Bool, Str, Time, DateTime, Bitmask
+from .utils import parse_enum_bitmask
 
 
 class DAY_PART(Enum):
@@ -19,13 +18,13 @@ class LOCK_STATE(Enum):
 class SERIAL_NUMBER(Command):
     CMD = 0x0B
     GET, SET = True, False
-    DATA = [Field(str, 'SERIAL_NUMBER')]
+    DATA = [Str('SERIAL_NUMBER')]
 
 
 class SOFTWARE_VERSION(Command):
     CMD = 0x0E
     GET, SET = True, False
-    DATA = [Field(str, 'SOFTWARE_VERSION')]
+    DATA = [Str('SOFTWARE_VERSION')]
 
 
 class MODEL_NUMBER(Command):
@@ -46,7 +45,7 @@ class MODEL_NUMBER(Command):
 
     # NOTE: Actually there is list of MODEL_NUMBER codes in specification,
     # but it's TOO long
-    DATA = [MODEL_SPECIES, Field(int, 'MODEL_NUMBER'), TV_SUPPORT]
+    DATA = [MODEL_SPECIES, Int('MODEL_NUMBER'), TV_SUPPORT]
 
 
 class POWER(Command):
@@ -64,8 +63,8 @@ class POWER(Command):
 class VOLUME(Command):
     CMD = 0x12
     GET, SET = True, True
-    VOLUME_INT = Field(int, 'VOLUME', range(101))
-    DATA = [VOLUME_INT]
+    VOLUME = Int('VOLUME', range(101))
+    DATA = [VOLUME]
 
 
 class MUTE(Command):
@@ -162,25 +161,25 @@ class MDC_CONNECTION(Command):
 class CONTRAST(Command):
     CMD = 0x24
     GET, SET = True, True
-    DATA = [Field(int, 'CONTRAST', range(101))]
+    DATA = [Int('CONTRAST', range(101))]
 
 
 class BRIGHTNESS(Command):
     CMD = 0x25
     GET, SET = True, True
-    DATA = [Field(int, 'BRIGHTNESS', range(101))]
+    DATA = [Int('BRIGHTNESS', range(101))]
 
 
 class SHARPNESS(Command):
     CMD = 0x26
     GET, SET = True, True
-    DATA = [Field(int, 'SHARPNESS', range(101))]
+    DATA = [Int('SHARPNESS', range(101))]
 
 
 class COLOR(Command):
     CMD = 0x27
     GET, SET = True, True
-    DATA = [Field(int, 'COLOR', range(101))]
+    DATA = [Int('COLOR', range(101))]
 
 
 class H_POSITION(Command):
@@ -245,13 +244,13 @@ class IR_STATE(Command):
 class RGB_CONTRAST(Command):
     CMD = 0x37
     GET, SET = True, True
-    DATA = [Field(int, 'CONTRAST', range(101))]
+    DATA = [Int('CONTRAST', range(101))]
 
 
 class RGB_BRIGHTNESS(Command):
     CMD = 0x38
     GET, SET = True, True
-    DATA = [Field(int, 'BRIGHTNESS', range(101))]
+    DATA = [Int('BRIGHTNESS', range(101))]
 
 
 class AUTO_ADJUSTMENT_ON(Command):
@@ -261,9 +260,21 @@ class AUTO_ADJUSTMENT_ON(Command):
     DATA = []
 
 
+class STANDBY(Command):
+    CMD = 0x4A
+    GET, SET = True, True
+
+    class STANDBY_STATE(Enum):
+        OFF = 0x00
+        ON = 0x01
+        AUTO = 0x02
+
+    DATA = [STANDBY_STATE]
+
+
 class AUTO_LAMP(Command):
     """
-    Auto Lamp function.
+    Auto Lamp function (backlight).
 
     Note: When Manual Lamp Control is on,
     Auto Lamp Control will automatically turn off.
@@ -272,15 +283,10 @@ class AUTO_LAMP(Command):
     GET, SET = True, True
 
     DATA = [
-        Field(int, 'AUTO_LAMP_MAX_HOUR', range(1, 13)),
-        Field(int, 'AUTO_LAMP_MAX_MINUTE', range(60)),
-        Field(DAY_PART, 'AUTO_LAMP_MAX_DAY_PART'),
-        Field(int, 'AUTO_LAMP_MAX_VALUE', range(101)),
-
-        Field(int, 'AUTO_LAMP_MIN_HOUR', range(1, 13)),
-        Field(int, 'AUTO_LAMP_MIN_MINUTE', range(60)),
-        Field(DAY_PART, 'AUTO_LAMP_MIN_DAY_PART'),
-        Field(int, 'AUTO_LAMP_MIN_VALUE', range(101)),
+        Time('MAX_TIME'),
+        Int('MAX_LAMP_VALUE', range(101)),
+        Time('MIN_TIME'),
+        Int('MIN_LAMP_VALUE', range(101)),
     ]
 
 
@@ -293,7 +299,7 @@ class MANUAL_LAMP(Command):
     """
     CMD = 0x58
     GET, SET = True, True
-    DATA = [Field(int, 'LAMP_VALUE', range(101))]
+    DATA = [Int('LAMP_VALUE', range(101))]
 
 
 class INVERSE(Command):
@@ -326,18 +332,14 @@ class DEVICE_NAME(Command):
     """
     CMD = 0x67
     GET, SET = True, False
-    DATA = [Field(str, 'DEVICE_NAME')]
+    DATA = [Str('DEVICE_NAME')]
 
 
 class OSD(Command):
     CMD = 0x70
     GET, SET = True, True
 
-    class OSD_STATE(Enum):
-        OFF = 0x00
-        ON = 0x01
-
-    DATA = [OSD_STATE]
+    DATA = [Bool('OSD_ENABLED')]
 
 
 class ALL_KEYS_LOCK(Command):
@@ -361,7 +363,7 @@ class ALL_KEYS_LOCK(Command):
 class MODEL_NAME(Command):
     CMD = 0x8A
     GET, SET = True, False
-    DATA = [Field(str, 'MODEL_NAME')]
+    DATA = [Str('MODEL_NAME')]
 
 
 class OSD_TYPE(Command):
@@ -375,31 +377,11 @@ class OSD_TYPE(Command):
         MDC = 0x03
         SCHEDULE_CHANNEL = 0x04
 
-    DATA = [OSD_TYPE, OSD.OSD_STATE]
+    DATA = [OSD_TYPE, Bool('OSD_ENABLED')]
 
     @classmethod
     def parse_response_data(cls, data):
-        return tuple(
-            (cls.OSD_TYPE(i), OSD.OSD_STATE(x))
-            for i, x in enumerate(
-                bit_unmask(data[0], length=len(cls.OSD_TYPE)))
-        )
-
-
-class TIMER_REPEAT(Enum):
-    ONCE = 0x00
-    EVERYDAY = 0x01
-    MON_FRI = 0x02
-    MON_SAT = 0x03
-    SAT_SUN = 0x04
-    MANUAL_WEEKDAY = 0x05
-
-
-class HOLIDAY_APPLY(Enum):
-    DONT_APPLY_BOTH = 0x00
-    APPLY_BOTH = 0x01
-    ON_TIMER_ONLY_APPLY = 0x02
-    OFF_TIMER_ONLY_APPLY = 0x03
+        return parse_enum_bitmask(cls.OSD_TYPE, data[0])
 
 
 class TIMER_15(Command):
@@ -407,30 +389,58 @@ class TIMER_15(Command):
     Integrated timer function (15 parameters version).
 
     Note: This depends on product and will not work on older versions.
+
+    ON_TIME/OFF_TIME - Turn ON/OFF display at specific time of day
+
+    ON_ACTIVE/OFF_ACTIVE - If timer is not active, values are ignored,
+    so there may be only OFF timer, ON timer, or both.
+
+    REPEAT - On which day timer is enabled
+    (combined with HOLIDAY_APPLY and MANUAL_WEEKDAY)
     """
-    CMD = Field(int, 'TIMER_ID', range(1, 8))
+    CMD = Int('TIMER_ID', range(1, 8))
     _TIMER_ID_CMD = [0xA4, 0xA5, 0xA6, 0xAB, 0xAC, 0xAD, 0xAE]
     GET, SET = True, True
 
+    class TIMER_REPEAT(Enum):
+        ONCE = 0x00
+        EVERYDAY = 0x01
+        MON_FRI = 0x02
+        MON_SAT = 0x03
+        SAT_SUN = 0x04
+        MANUAL_WEEKDAY = 0x05
+
+    class WEEKDAY(Enum):
+        SUN = 0
+        MON = 1
+        TUE = 2
+        WED = 3
+        THU = 4
+        FRI = 5
+        SAT = 6
+        # ignore_bit_7 = 7
+
+    class HOLIDAY_APPLY(Enum):
+        DONT_APPLY_BOTH = 0x00
+        APPLY_BOTH = 0x01
+        ON_TIMER_ONLY_APPLY = 0x02
+        OFF_TIMER_ONLY_APPLY = 0x03
+
     DATA = [
-        Field(int, 'ON_HOUR', range(1, 13)),
-        Field(int, 'ON_MINUTE', range(60)),
-        Field(DAY_PART, 'ON_DAY_PART'),
-        Field(bool, 'ON_ACT'),
+        Time('ON_TIME'),
+        Bool('ON_ENABLED'),
 
-        Field(int, 'OFF_HOUR', range(1, 13)),
-        Field(int, 'OFF_MINUTE', range(60)),
-        Field(DAY_PART, 'OFF_DAY_PART'),
-        Field(bool, 'OFF_ACT'),
+        Time('OFF_TIME'),
+        Bool('OFF_ENABLED'),
 
-        Field(TIMER_REPEAT, 'ON_REPEAT'),
+        EnumField(TIMER_REPEAT, 'ON_REPEAT'),
         # TODO: implement bitmask field
-        Field(int, 'ON_MANUAL_WEEKDAY'),
+        Bitmask(WEEKDAY, 'ON_MANUAL_WEEKDAY'),
 
-        Field(TIMER_REPEAT, 'OFF_REPEAT'),
-        Field(int, 'OFF_MANUAL_WEEKDAY'),
+        EnumField(TIMER_REPEAT, 'OFF_REPEAT'),
+        Bitmask(WEEKDAY, 'OFF_MANUAL_WEEKDAY'),
 
-        VOLUME.VOLUME_INT,
+        VOLUME.VOLUME,
         INPUT_SOURCE.INPUT_SOURCE_STATE,
         HOLIDAY_APPLY,
     ]
@@ -456,13 +466,14 @@ class TIMER_13(TIMER_15):
 
     Note: This depends on product and will not work on newer versions.
     """
-    DATA = []
-    for f in TIMER_15.DATA:
-        if f.name not in ('OFF_REPEAT', 'OFF_MANUAL_WEEKDAY'):
-            if f.name in ('ON_REPEAT', 'ON_MANUAL_WEEKDAY'):
-                DATA.append(Field(f.type, f.name.replace('ON_', ''), f.range))
-            else:
-                DATA.append(f)
+    DATA = ([
+        f for f in TIMER_15.DATA
+        if not f.name.endswith('_REPEAT')
+        and not f.name.endswith('_MANUAL_WEEKDAY')
+    ] + [
+        EnumField(TIMER_15.TIMER_REPEAT, 'REPEAT'),
+        Bitmask(TIMER_15.WEEKDAY, 'MANUAL_WEEKDAY'),
+    ])
 
 
 class RESET(Command):
@@ -489,31 +500,7 @@ class CLOCK_S(Command):
     GET, SET = True, True
     CMD = 0xC5
 
-    DATA = [Field(datetime, 'DATETIME')]
-
-    @classmethod
-    def parse_response_data(cls, data):
-        if not len(data) == 8:
-            raise MDCResponseError('Unexpected data length', data)
-        time = parse_mdc_time(data[7], data[1], data[2], data[3])
-        return (datetime(
-            int.from_bytes(data[5:7], 'big'),  # year
-            data[4], data[0],  # month, day
-            time.hour, time.minute, time.second
-        ),)
-
-    @classmethod
-    def pack_payload_data(cls, data, seconds=True):
-        print(data)
-        if len(data) != 1:
-            raise ValueError('Unexpected data length')
-        dt = data[0]
-        day_part, hour, minute, second = pack_mdc_time(dt.time())
-        return (
-            bytes([dt.day, hour, minute])
-            + (seconds and bytes([second]) or b'')
-            + bytes([dt.month])
-            + int.to_bytes(dt.year, 2, 'big') + bytes([day_part]))
+    DATA = [DateTime()]
 
 
 class CLOCK_M(CLOCK_S):
@@ -525,20 +512,7 @@ class CLOCK_M(CLOCK_S):
     """
     CMD = 0xA7
 
-    @classmethod
-    def parse_response_data(cls, data):
-        if not len(data) == 7:
-            raise MDCResponseError('Unexpected data length', data)
-        time = parse_mdc_time(data[6], data[1], data[2])
-        return (datetime(
-            int.from_bytes(data[4:6], 'big'),  # year
-            data[3], data[0],  # month, day
-            time.hour, time.minute, time.second
-        ),)
-
-    @classmethod
-    def pack_payload_data(cls, data):
-        return CLOCK_S.pack_payload_data(data, seconds=False)
+    DATA = [DateTime(seconds=False)]
 
 
 class VIRTUAL_REMOTE(Command):
@@ -649,14 +623,14 @@ class LAUNCHER_URL_ADDRESS(Command):
     CMD = 0xC7
     SUBCMD = 0x82
     GET, SET = True, True
-    DATA = [Field(str, 'URL_ADDRESS')]
+    DATA = [Str('URL_ADDRESS')]
 
 
 class STATUS(Command):
     CMD = 0x00
     GET, SET = True, False
     DATA = [
-        POWER.POWER_STATE, VOLUME.VOLUME_INT, MUTE.MUTE_STATE,
+        POWER.POWER_STATE, VOLUME.VOLUME, MUTE.MUTE_STATE,
         INPUT_SOURCE.INPUT_SOURCE_STATE, PICTURE_ASPECT.PICTURE_ASPECT_STATE,
-        Field(int, 'N_TIME_NF'), Field(int, 'F_TIME_NF')
+        Int('N_TIME_NF'), Int('F_TIME_NF')
     ]

@@ -5,16 +5,15 @@
 # BEWARE: If you want something flexible and overridable for cli processing,
 # "click" just may not be your choice...
 
-from enum import Enum
-from datetime import datetime
+from datetime import time
 import asyncio
+import re
 import os.path
 from sys import argv as sys_argv
 
 import click
 
-from . import MDC
-from .commands import Field as MDCField
+from . import MDC, fields
 
 
 def _parse_int(x):
@@ -85,6 +84,33 @@ class EnumChoice(click.ParamType):
         return f"EnumChoice({self.enum})"
 
 
+class EnumTuple(EnumChoice):
+    name = "enum_tuple"
+
+    def convert(self, value, param, ctx):
+        if not value:
+            return tuple()
+        convert_ = super().convert
+        return tuple(convert_(v, param, ctx)
+                     for v in value.split(','))
+
+    def __repr__(self):
+        return f"EnumTuple({self.enum})"
+
+
+class Time(click.ParamType):
+    name = "time"
+
+    def convert(self, value, param, ctx):
+        try:
+            return time(*map(int, value.split(':')))
+        except ValueError:
+            self.fail("{} is not a valid time".format(value), param, ctx)
+
+    def __repr__(self):
+        return "TIME"
+
+
 class ArgumentWithHelp(click.Argument):
     # Extends Argument with "help" parameter,
     # so they can be rendered in help same way as options
@@ -144,7 +170,7 @@ class FixedSubcommand(ArgumentWithHelpCommandMixin, click.Command):
         formatter.write_usage(root_path, " ".join(pieces))
 
 
-class Group(ArgumentWithHelpCommandMixin, click.Group):
+class Group(click.Group):
     def get_help_option(self, ctx):
         # Override this to pass parameters to --help
         # This is needed to be able to do "--help COMMAND"
@@ -203,7 +229,7 @@ class MDCClickCommand(FixedSubcommand):
         # Registering params from DATA format
         kwargs.setdefault('params', [])
 
-        if isinstance(mdc_command.CMD, MDCField):
+        if isinstance(mdc_command.CMD, fields.Field):
             kwargs['params'].append(
                 self._get_argument_from_mdc_field(mdc_command.CMD, 'cmd'))
 
@@ -214,20 +240,31 @@ class MDCClickCommand(FixedSubcommand):
         super().__init__(name, **kwargs)
 
     def _get_argument_from_mdc_field(self, field, ident=None):
-        if issubclass(field.type, Enum):
-            type = EnumChoice(field.type)
-            help = ' | '.join(field.type.__members__.keys())
-        elif issubclass(field.type, datetime):
+        if isinstance(field, fields.Bitmask):
+            type = EnumTuple(field.enum)
+            help = ('list(,) ' +
+                    (' | '.join(field.enum.__members__.keys())))
+        elif isinstance(field, fields.Enum):
+            type = EnumChoice(field.enum)
+            help = ' | '.join(field.enum.__members__.keys())
+        elif isinstance(field, fields.DateTime):
             formats = [
                 "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S",
                 "%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M",
             ]
             type = click.DateTime(formats)
-            help = f'DATETIME (format: {" / ".join(formats)})'
+            help = f'datetime (format: {" / ".join(formats)})'
+        elif isinstance(field, fields.Time):
+            type = Time()
+            help = 'time (format: %H:%M:%S)'
         else:
-            type = field.type
-            help = field.type.__name__
-            if field.range:
+            type = {
+                fields.Str: str,
+                fields.Bool: bool,
+                fields.Int: int,
+            }[field.__class__]
+            help = type.__name__.lower()
+            if type is int and field.range:
                 help += f' ({field.range.start}-{field.range.stop - 1})'
 
         return ArgumentWithHelp(
@@ -238,7 +275,7 @@ class MDCClickCommand(FixedSubcommand):
         params = ' '.join([f.name for f in self.mdc_command.DATA])
         if self.mdc_command.GET and self.mdc_command.SET and params:
             params = f'[{params}]'
-        if isinstance(self.mdc_command.CMD, MDCField):
+        if isinstance(self.mdc_command.CMD, fields.Field):
             # parametrized CMD is always required argument
             params = f'{self.mdc_command.CMD.name} {params}'
         return params
@@ -258,7 +295,7 @@ class MDCClickCommand(FixedSubcommand):
 
         # Except parametrized CMD - special case for timer,
         # we have 14 almost identical commands otherwise...
-        if isinstance(self.mdc_command.CMD, MDCField):
+        if isinstance(self.mdc_command.CMD, fields.Field):
             if self.mdc_command.GET and len(args) == 1:
                 if '--help' in sys_argv:
                     return super().parse_args(ctx, args)
@@ -290,7 +327,7 @@ class MDCClickCommand(FixedSubcommand):
 
     def create_mdc_call(self, params):
         args = tuple(params.values())
-        if isinstance(self.mdc_command.CMD, MDCField):
+        if isinstance(self.mdc_command.CMD, fields.Field):
             args = args[0], args[1:]
         else:
             args = [args] if args else []
@@ -301,10 +338,10 @@ class MDCClickCommand(FixedSubcommand):
 
         async def mdc_call(connection, display_id):
             try:
-                print(f'{display_id}@{connection.ip}:{connection.port}',
+                print(f'{display_id}@{connection.target}',
                       await self.mdc_command(connection, display_id, *args))
             except Exception as exc:
-                print(f'{display_id}@{connection.ip}:{connection.port}',
+                print(f'{display_id}@{connection.target}',
                       f'{exc.__class__.__name__}: {exc}')
                 raise
         mdc_call.name = self.name
@@ -319,10 +356,11 @@ class MDCTargetParamType(click.ParamType):
         return param.help
 
     def convert_target(self, value, param, ctx):
+        win_com_port_regexp = re.compile(r'COM\d+', re.IGNORECASE)
+
         if '@' not in value:
             self.fail(
-                f'DISPLAY_ID required '
-                '(try 1, for some devices 0xFE(254) means "any")\n'
+                f'DISPLAY_ID required (try 0, 1)\n'
                 f'Format: {param.help}')
 
         display_id, addr = value.split('@')
@@ -341,9 +379,13 @@ class MDCTargetParamType(click.ParamType):
                 self.fail(
                     f'Invalid PORT "{port}"\n'
                     f'Format: {param.help}')
-        else:
-            ip, port = addr, 1515
-        return display_id, ip, port
+            return 'tcp', f'{ip}:{port}', display_id
+        elif (
+            '/' in addr or addr.startswith('.')
+            or win_com_port_regexp.match(addr)
+        ):
+            return 'serial', addr, display_id
+        return 'tcp', addr, display_id
 
     def convert(self, value, param, ctx):
         if '@' in value:
@@ -374,29 +416,47 @@ class MDCTargetParamType(click.ParamType):
             return targets
 
 
-@click.group(cls=Group, help=(
-    "Try 'samsung-mdc --help COMMAND' for command info\n\n"
-    "For multiple targets commands will be running async, so result order "
-    "may differ."
-))
-@click.argument('target', metavar='TARGET', help=(
-        'DISPLAY_ID@IP[:PORT] (default port: 1515) '
-        '(example: 1@192.168.0.10:1515) '
-        'or FILENAME with target list'
-    ), type=MDCTargetParamType(), cls=ArgumentWithHelp)
+MAIN_HELP = """
+Try 'samsung-mdc --help COMMAND' for command info\n
+For multiple targets commands will be running async,
+so result order may differ.
+
+TARGET may be:
+
+\b
+DISPLAY_ID@IP[:PORT] (default port: 1515, example: 0@192.168.0.10:1515)
+FILENAME with target list (separated by newline)
+
+\b
+For serial port connection:
+DISPLAY_ID@PORT_NAME for Windows (example: 1@COM1)
+DISPLAY_ID@PORT_PATH (example: 1@/dev/ttyUSB0)
+
+We're trying to make autodetection of connection mode by port name,
+but you may want to use --mode option.
+"""
+
+
+@click.group(cls=Group, help=MAIN_HELP)
+@click.argument('target', metavar='TARGET',
+                type=MDCTargetParamType())
 @click.option('-v', '--verbose', is_flag=True, default=False, type=bool)
+@click.option('-m', '--mode', default='auto', help='default: auto',
+              type=click.Choice(('auto', 'tcp', 'serial'),
+                                case_sensitive=False))
 @click.option(
-    '--timeout', default=3, type=float, help=(
-        'read/write/connect timeout in seconds (default: 3) '
+    '-t', '--timeout', default=5, type=float, help=(
+        'read/write/connect timeout in seconds (default: 5) '
         '(connect can be overrided with separate option)'))
 @click.option('--connect-timeout', default=None, type=float)
 @click.pass_context
-def cli(ctx, target, verbose, **kwargs):
+def cli(ctx, target, verbose, mode, **kwargs):
     ctx.ensure_object(dict)
     ctx.obj['targets'] = [(
-        MDC(ip, port, **{'verbose': verbose, **kwargs}),
+        MDC(target, auto_mode if mode == 'auto' else mode,
+            **{'verbose': verbose, **kwargs}),
         display_id
-    ) for display_id, ip, port in target]
+    ) for auto_mode, target, display_id in target]
     ctx.obj['verbose'] = verbose
 
 
@@ -556,7 +616,7 @@ def script(ctx, script_file, sleep, retry_command, retry_command_sleep,
                         await asyncio.sleep(retry_command_sleep)
                     if ctx.obj['verbose']:
                         print(
-                            f'{display_id}@{connection.ip}:{connection.port}',
+                            f'{display_id}@{connection.target}',
                             f'{retry_script_i}:{command_i}:{retry_command_i}',
                             f'{call_.name}: {call_.args}')
                     try:
@@ -573,7 +633,7 @@ def script(ctx, script_file, sleep, retry_command, retry_command_sleep,
 
         if last_exc is not None:
             failed_targets.append((connection, display_id, last_exc))
-            print(f'{display_id}@{connection.ip}:{connection.port}',
+            print(f'{display_id}@{connection.target}',
                   f'Script failed indefinitely: {last_exc}')
             if ctx.obj['verbose']:
                 raise last_exc
