@@ -6,7 +6,7 @@ It allows you to control a variety of different sources (TV, Monitor) through th
 
 [MDC Protocol specification - v13.7c 2016-02-23](MDC-Protocol_v13.7c_2016-02-23.pdf)
 
-* Implemented *45* commands
+* Implemented *46* commands
 * Easy to extend using simple declarative API - see [samsung_mdc/commmands.py](samsung_mdc/commands.py)
 * Detailed CLI help and parameters validation
 * Run commands async on numerous targets (using asyncio)
@@ -78,6 +78,7 @@ Options:
 * [brightness](#brightness) `[BRIGHTNESS]`
 * [sharpness](#sharpness) `[SHARPNESS]`
 * [color](#color) `[COLOR]`
+* [tint](#tint) `[TINT]`
 * [h_position](#h_position) `H_POSITION_MOVE_TO`
 * [v_position](#v_position) `V_POSITION_MOVE_TO`
 * [auto_power](#auto_power) `[AUTO_POWER_STATE]`
@@ -241,6 +242,18 @@ Usage: samsung-mdc [OPTIONS] TARGET color [COLOR]
 
 Data:
   COLOR  int (0-100)
+```
+#### tint
+```
+Usage: samsung-mdc [OPTIONS] TARGET tint [TINT]
+
+  Tint value code to be set on TV/Monitor. R: Tint Value, G: ( 100 - Tint )
+  Value.
+
+  Note: Tint could only be set in 50 Steps (0, 2, 4, 6... 100).
+
+Data:
+  TINT  int (0-100)
 ```
 #### h_position
 ```

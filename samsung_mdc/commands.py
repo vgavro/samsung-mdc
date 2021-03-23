@@ -182,6 +182,18 @@ class COLOR(Command):
     DATA = [Int('COLOR', range(101))]
 
 
+class TINT(Command):
+    """
+    Tint value code to be set on TV/Monitor.
+    R: Tint Value, G: ( 100 - Tint ) Value.
+
+    Note: Tint could only be set in 50 Steps (0, 2, 4, 6... 100).
+    """
+    CMD = 0x28
+    GET, SET = True, True
+    DATA = [Int('TINT', range(101))]
+
+
 class H_POSITION(Command):
     CMD = 0x31
     GET, SET = False, True

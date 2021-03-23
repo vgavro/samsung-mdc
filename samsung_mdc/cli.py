@@ -352,16 +352,14 @@ class MDCClickCommand(FixedSubcommand):
 class MDCTargetParamType(click.ParamType):
     name = 'mdc_target'
 
-    def get_missing_message(self, param):
-        return param.help
+    _win_com_port_regexp = re.compile(r'COM\d+', re.IGNORECASE)
+
+    # def get_missing_message(self, param):
+    #     return param.help
 
     def convert_target(self, value, param, ctx):
-        win_com_port_regexp = re.compile(r'COM\d+', re.IGNORECASE)
-
         if '@' not in value:
-            self.fail(
-                f'DISPLAY_ID required (try 0, 1)\n'
-                f'Format: {param.help}')
+            self.fail('DISPLAY_ID required (try 0, 1)')
 
         display_id, addr = value.split('@')
         try:
@@ -369,20 +367,17 @@ class MDCTargetParamType(click.ParamType):
         except ValueError:
             self.fail(
                 f'Invalid DISPLAY_ID "{display_id}" '
-                '(int or hex, example: 1, 0x01, 254, 0xFE)\n'
-                f'Format: {param.help}')
+                '(int or hex, example: 1, 0x01, 254, 0xFE)')
         if ':' in addr:
             ip, port = addr.split(':')
             try:
                 port = int(port)
             except ValueError:
-                self.fail(
-                    f'Invalid PORT "{port}"\n'
-                    f'Format: {param.help}')
+                self.fail(f'Invalid PORT "{port}"')
             return 'tcp', f'{ip}:{port}', display_id
         elif (
             '/' in addr or addr.startswith('.')
-            or win_com_port_regexp.match(addr)
+            or self._win_com_port_regexp.match(addr)
         ):
             return 'serial', addr, display_id
         return 'tcp', addr, display_id
@@ -390,11 +385,15 @@ class MDCTargetParamType(click.ParamType):
     def convert(self, value, param, ctx):
         if '@' in value:
             return [self.convert_target(value, param, ctx)]
+        elif (
+            self._win_com_port_regexp.match(value)
+            or value.startswith('/dev/')
+        ):
+            self.fail('Looks like you want to use serial port, '
+                      'but DISPLAY_ID required (try 0, 1)')
         else:
             if not os.path.exists(value):
-                self.fail(
-                    f'FILENAME "{value}" does not exist.\n'
-                    f'Format: {param.help}')
+                self.fail(f'FILENAME "{value}" does not exist.')
             data = open(value).read()
             data = [
                 (i + 1, line.strip())
@@ -411,8 +410,7 @@ class MDCTargetParamType(click.ParamType):
                     raise
             if not targets:
                 self.fail(
-                    f'FILENAME "{value} is empty.\n'
-                    f'Format: {param.help}')
+                    f'FILENAME "{value} is empty.')
             return targets
 
 

@@ -70,7 +70,7 @@ class Str(Field):
         return data.decode('utf8').rstrip('\x00')
 
     def pack(self, value):
-        if len(value) > self.len:
+        if self.len is not None and len(value) > self.len:
             raise ValueError('Field length exceeded', self.name, self.len)
         return value.encode('utf8')
 
