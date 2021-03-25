@@ -272,6 +272,21 @@ class AUTO_ADJUSTMENT_ON(Command):
     DATA = []
 
 
+class COLOR_TONE(Command):
+    CMD = 0x3E
+    GET, SET = True, True
+
+    class COLOR_TONE_STATE(Enum):
+        COOL_2 = 0x00
+        COOL_1 = 0x01
+        NORMAL = 0x02
+        WARM_1 = 0x03
+        WARM_2 = 0x04
+        OFF = 0x50
+
+    DATA = [COLOR_TONE_STATE]
+
+
 class STANDBY(Command):
     CMD = 0x4A
     GET, SET = True, True
@@ -304,7 +319,7 @@ class AUTO_LAMP(Command):
 
 class MANUAL_LAMP(Command):
     """
-    Manual Lamp function.
+    Manual Lamp function (backlight).
 
     Note: When Auto Lamp Control is on,
     Manual Lamp Control will automatically turn off.
@@ -376,6 +391,34 @@ class MODEL_NAME(Command):
     CMD = 0x8A
     GET, SET = True, False
     DATA = [Str('MODEL_NAME')]
+
+
+class ENERGY_SAVING(Command):
+    CMD = 0x92
+    GET, SET = True, True
+
+    class ENERGY_SAVING_STATE(Enum):
+        OFF = 0x00
+        LOW = 0x01
+        MEDIUM = 0x02
+        HIGH = 0x03
+        PICTURE_OFF = 0x04
+
+    DATA = [ENERGY_SAVING_STATE]
+
+
+class RESET(Command):
+    CMD = 0x9F
+    GET, SET = False, True
+
+    class RESET_TARGET(Enum):
+        PICTURE = 0x00
+        SOUND = 0x01
+        SETUP = 0x02  # (System reset)
+        ALL = 0x03
+        SCREEN_DISPLAY = 0x04
+
+    DATA = [RESET_TARGET]
 
 
 class OSD_TYPE(Command):
@@ -486,20 +529,6 @@ class TIMER_13(TIMER_15):
         EnumField(TIMER_15.TIMER_REPEAT, 'REPEAT'),
         Bitmask(TIMER_15.WEEKDAY, 'MANUAL_WEEKDAY'),
     ])
-
-
-class RESET(Command):
-    CMD = 0x9F
-    GET, SET = False, True
-
-    class RESET_TARGET(Enum):
-        PICTURE = 0x00
-        SOUND = 0x01
-        SETUP = 0x02  # (System reset)
-        ALL = 0x03
-        SCREEN_DISPLAY = 0x04
-
-    DATA = [RESET_TARGET]
 
 
 class CLOCK_S(Command):
@@ -636,6 +665,17 @@ class LAUNCHER_URL_ADDRESS(Command):
     SUBCMD = 0x82
     GET, SET = True, True
     DATA = [Str('URL_ADDRESS')]
+
+
+class PANEL(Command):
+    CMD = 0xF9
+    GET, SET = True, True
+
+    class PANEL_STATE(Enum):
+        ON = 0x00
+        OFF = 0x01
+
+    DATA = [PANEL_STATE]
 
 
 class STATUS(Command):

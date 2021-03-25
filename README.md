@@ -6,12 +6,13 @@ It allows you to control a variety of different sources (TV, Monitor) through th
 
 [MDC Protocol specification - v13.7c 2016-02-23](MDC-Protocol_v13.7c_2016-02-23.pdf)
 
-* Implemented *46* commands
+* Implemented *49* commands
 * Easy to extend using simple declarative API - see [samsung_mdc/commmands.py](samsung_mdc/commands.py)
-* Detailed CLI help and parameters validation
+* Detailed [CLI](#usage) help and parameters validation
 * Run commands async on numerous targets (using asyncio)
 * TCP and SERIAL mode (for RJ45 and RS232C connection types)
 * [script](#script) command for advanced usage
+* [Python example](#python-example)
 
 Not implemented: some more commands (PRs are welcome)
 
@@ -87,6 +88,7 @@ Options:
 * [rgb_contrast](#rgb_contrast) `[CONTRAST]`
 * [rgb_brightness](#rgb_brightness) `[BRIGHTNESS]`
 * [auto_adjustment_on](#auto_adjustment_on) 
+* [color_tone](#color_tone) `[COLOR_TONE_STATE]`
 * [standby](#standby) `[STANDBY_STATE]`
 * [auto_lamp](#auto_lamp) `[MAX_TIME MAX_LAMP_VALUE MIN_TIME MIN_LAMP_VALUE]`
 * [manual_lamp](#manual_lamp) `[LAMP_VALUE]`
@@ -97,6 +99,7 @@ Options:
 * [osd](#osd) `[OSD_ENABLED]`
 * [all_keys_lock](#all_keys_lock) `[LOCK_STATE]`
 * [model_name](#model_name) `(MODEL_NAME)`
+* [energy_saving](#energy_saving) `[ENERGY_SAVING_STATE]`
 * [reset](#reset) `RESET_TARGET`
 * [osd_type](#osd_type) `[OSD_TYPE OSD_ENABLED]`
 * [timer_13](#timer_13) `TIMER_ID [ON_TIME ON_ENABLED OFF_TIME OFF_ENABLED VOLUME INPUT_SOURCE_STATE HOLIDAY_APPLY REPEAT MANUAL_WEEKDAY]`
@@ -109,6 +112,7 @@ Options:
 * [clock_s](#clock_s) `[DATETIME]`
 * [launcher_play_via](#launcher_play_via) `[PLAY_VIA_MODE]`
 * [launcher_url_address](#launcher_url_address) `[URL_ADDRESS]`
+* [panel](#panel) `[PANEL_STATE]`
 * [script](#script) `[OPTIONS] SCRIPT_FILE`
 
 #### status
@@ -310,6 +314,13 @@ Data:
 ```
 Usage: samsung-mdc [OPTIONS] TARGET auto_adjustment_on
 ```
+#### color_tone
+```
+Usage: samsung-mdc [OPTIONS] TARGET color_tone [COLOR_TONE_STATE]
+
+Data:
+  COLOR_TONE_STATE  COOL_2 | COOL_1 | NORMAL | WARM_1 | WARM_2 | OFF
+```
 #### standby
 ```
 Usage: samsung-mdc [OPTIONS] TARGET standby [STANDBY_STATE]
@@ -337,7 +348,7 @@ Data:
 ```
 Usage: samsung-mdc [OPTIONS] TARGET manual_lamp [LAMP_VALUE]
 
-  Manual Lamp function.
+  Manual Lamp function (backlight).
 
   Note: When Auto Lamp Control is on, Manual Lamp Control will automatically
   turn off.
@@ -400,6 +411,13 @@ Usage: samsung-mdc [OPTIONS] TARGET model_name
 
 Data:
   MODEL_NAME  str
+```
+#### energy_saving
+```
+Usage: samsung-mdc [OPTIONS] TARGET energy_saving [ENERGY_SAVING_STATE]
+
+Data:
+  ENERGY_SAVING_STATE  OFF | LOW | MEDIUM | HIGH | PICTURE_OFF
 ```
 #### reset
 ```
@@ -579,6 +597,13 @@ Usage: samsung-mdc [OPTIONS] TARGET launcher_url_address [URL_ADDRESS]
 Data:
   URL_ADDRESS  str
 ```
+#### panel
+```
+Usage: samsung-mdc [OPTIONS] TARGET panel [PANEL_STATE]
+
+Data:
+  PANEL_STATE  ON | OFF
+```
 #### script
 ```
 Usage: samsung-mdc [OPTIONS] TARGET script [OPTIONS] SCRIPT_FILE
@@ -619,4 +644,33 @@ Options:
   -r, --retry-script INTEGER   Retry script if failed (count)
   --retry-script-sleep FLOAT   Sleep before script retry (seconds)
   --help                       Show this message and exit.
+```
+
+## Python example
+```python3
+import asyncio
+from samsung_mdc import MDC
+
+
+async def main(ip, display_id):
+    async with MDC(ip, verbose=True) as mdc:
+        # First argument of command is always display_id
+        status = await mdc.status(display_id)
+        print(status)  # Result is always tuple
+
+        if status[0] != MDC.power.POWER_STATE.ON:
+            # Command arguments are always Sequence (tuple, list)
+            await mdc.power(display_id, [MDC.power.POWER_STATE.ON])
+            await mdc.close()  # Force reconnect on next command
+            await asyncio.sleep(15)
+
+        await mdc.display_id(display_id, [MDC.display_id.DISPLAY_ID_STATE.ON])
+        # You may also use names or values instead of enums
+        await mdc.display_id(display_id, ['ON'])  # same
+        await mdc.display_id(display_id, [1])     # same
+
+
+# If you see "Connected" and timeout error, try other display_id (0, 1)
+asyncio.run(main('192.168.0.10', 1))
+
 ```

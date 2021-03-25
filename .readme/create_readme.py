@@ -38,6 +38,7 @@ def create_readme():
             open('.readme/README.template.md').read()
             .replace('{{usage}}', get_usage_docs())
             .replace('{{command_count}}', str(len(cli.commands)))
+            .replace('{{python_example}}', open('./.readme/example.py').read())
         )
 
 

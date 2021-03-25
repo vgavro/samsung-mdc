@@ -68,6 +68,9 @@ class MDCConnection:
                         **self.connection_kwargs),
                     self.connect_timeout, 'Connect timeout')
 
+        if self.verbose:
+            self.verbose('Connected')
+
     @property
     def is_opened(self):
         return self.writer is not None
@@ -87,8 +90,6 @@ class MDCConnection:
 
         if not self.is_opened:
             await self.open()
-            if self.verbose:
-                self.verbose('Connected')
 
         self.writer.write(payload)
         await wait_for(self.writer.drain(), self.timeout, 'Write timeout')
@@ -126,3 +127,15 @@ class MDCConnection:
         self.reader, self.writer = None, None
         writer.close()
         await writer.wait_closed()
+
+    async def __aenter__(self):
+        if not self.is_opened:
+            await self.open()
+        return self
+
+    async def __aexit__(self, *args):
+        if self.is_opened:
+            await self.close()
+
+    def __await__(self):
+        return self.__aenter__().__await__()

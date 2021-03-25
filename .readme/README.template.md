@@ -8,10 +8,11 @@ It allows you to control a variety of different sources (TV, Monitor) through th
 
 * Implemented *{{command_count}}* commands
 * Easy to extend using simple declarative API - see [samsung_mdc/commmands.py](samsung_mdc/commands.py)
-* Detailed CLI help and parameters validation
+* Detailed [CLI](#usage) help and parameters validation
 * Run commands async on numerous targets (using asyncio)
 * TCP and SERIAL mode (for RJ45 and RS232C connection types)
 * [script](#script) command for advanced usage
+* [Python example](#python-example)
 
 Not implemented: some more commands (PRs are welcome)
 
@@ -32,3 +33,8 @@ python3 -m venv venv
 
 ## Usage
 {{usage}}
+
+## Python example
+```python3
+{{python_example}}
+```

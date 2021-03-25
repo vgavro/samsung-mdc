@@ -52,7 +52,9 @@ class Command(metaclass=CommandMcs):
 
     def __get__(self, connection, cls):
         # Allow Command to be bounded as instance method
-        return partial(self, connection)
+        if connection is None:
+            return self  # bind to class
+        return partial(self, connection)  # bind to instance
 
     @staticmethod
     def parse_response(response):

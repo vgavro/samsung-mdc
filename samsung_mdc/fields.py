@@ -52,11 +52,9 @@ class Enum(Field):
         return self.enum(data[0])
 
     def pack(self, value):
-        if isinstance(value, self.enum):
-            return [value.value]
-        if value not in [v.value for v in self.enum]:
-            raise ValueError('Field value unknown', self.name, value)
-        return [value]
+        if isinstance(value, str):
+            value = self.enum[value]
+        return [self.enum(value).value]
 
 
 class Str(Field):
