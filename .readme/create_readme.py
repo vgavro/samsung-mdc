@@ -24,7 +24,7 @@ def get_usage_docs():
             rv += f'* [{name}](#{name}) {hint}\n'
 
         for name in cli.list_commands(ctx):
-            rv += f'\n#### {name}\n```\n' + (
+            rv += f'\n#### {name}<a id="{name}"></a>\n```\n' + (
                 cli.commands[name].get_help(ctx)
                 .replace('\n\nOptions:\n  --help  Show this message and exit.',
                          '')

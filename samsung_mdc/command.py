@@ -76,7 +76,7 @@ class Command(metaclass=CommandMcs):
 
         if cursor is not None and data[cursor:]:
             # Not consumed data left
-            raise MDCResponseError('Unparsed data left', data)
+            raise MDCResponseError('Unparsed data left', data[cursor:])
         return tuple(rv)
 
     @classmethod

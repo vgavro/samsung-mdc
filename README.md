@@ -4,10 +4,10 @@ This is implementation of Samsung MDC (Multiple Display Control) protocol on **p
 
 It allows you to control a variety of different sources (TV, Monitor) through the built-in RS-232C or Ethernet interface.
 
-[MDC Protocol specification - v13.7c 2016-02-23](MDC-Protocol_v13.7c_2016-02-23.pdf)
+[MDC Protocol specification - v13.7c 2016-02-23](https://vgavro.github.io/samsung-mdc/MDC-Protocol_v13.7c_2016-02-23.pdf)
 
-* Implemented *49* commands
-* Easy to extend using simple declarative API - see [samsung_mdc/commmands.py](samsung_mdc/commands.py)
+* Implemented *56* commands
+* Easy to extend using simple declarative API - see [samsung_mdc/commmands.py](https://github.com/vgavro/samsung-mdc/blob/master/samsung_mdc/commands.py)
 * Detailed [CLI](#usage) help and parameters validation
 * Run commands async on numerous targets (using asyncio)
 * TCP and SERIAL mode (for RJ45 and RS232C connection types)
@@ -16,7 +16,7 @@ It allows you to control a variety of different sources (TV, Monitor) through th
 
 Not implemented: some more commands (PRs are welcome)
 
-## Install
+## Install<a id="install"></a>
 
 ```
 # global
@@ -31,7 +31,7 @@ python3 -m venv venv
 ./venv/bin/samsung-mdc --help
 ```
 
-## Usage
+## Usage<a id="usage"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET COMMAND [ARGS]...
 
@@ -66,14 +66,18 @@ Options:
 ### Commands:
 
 * [status](#status) `(POWER_STATE VOLUME MUTE_STATE INPUT_SOURCE_STATE PICTURE_ASPECT_STATE N_TIME_NF F_TIME_NF)`
+* [video](#video) `(CONTRAST BRIGHTNESS SHARPNESS COLOR TINT COLOR_TONE_STATE COLOR_TEMPERATURE _IGNORE)`
+* [rgb](#rgb) `(CONTRAST BRIGHTNESS COLOR_TONE_STATE COLOR_TEMPERATURE _IGNORE RED_GAIN GREEN_GAIN BLUE_GAIN)`
 * [serial_number](#serial_number) `(SERIAL_NUMBER)`
 * [software_version](#software_version) `(SOFTWARE_VERSION)`
-* [model_number](#model_number) `(MODEL_SPECIES MODEL_NUMBER TV_SUPPORT)`
+* [model_number](#model_number) `(MODEL_SPECIES MODEL_CODE TV_SUPPORT)`
 * [power](#power) `[POWER_STATE]`
 * [volume](#volume) `[VOLUME]`
 * [mute](#mute) `[MUTE_STATE]`
 * [input_source](#input_source) `[INPUT_SOURCE_STATE]`
 * [picture_aspect](#picture_aspect) `[PICTURE_ASPECT_STATE]`
+* [screen_mode](#screen_mode) `[SCREEN_MODE_STATE]`
+* [screen_size](#screen_size) `(INCHES)`
 * [mdc_connection](#mdc_connection) `(MDC_CONNECTION_TYPE)`
 * [contrast](#contrast) `[CONTRAST]`
 * [brightness](#brightness) `[BRIGHTNESS]`
@@ -89,12 +93,15 @@ Options:
 * [rgb_brightness](#rgb_brightness) `[BRIGHTNESS]`
 * [auto_adjustment_on](#auto_adjustment_on) 
 * [color_tone](#color_tone) `[COLOR_TONE_STATE]`
+* [color_temperature](#color_temperature) `[HECTO_KELVIN]`
 * [standby](#standby) `[STANDBY_STATE]`
 * [auto_lamp](#auto_lamp) `[MAX_TIME MAX_LAMP_VALUE MIN_TIME MIN_LAMP_VALUE]`
 * [manual_lamp](#manual_lamp) `[LAMP_VALUE]`
 * [inverse](#inverse) `[INVERSE_STATE]`
 * [safety_lock](#safety_lock) `[LOCK_STATE]`
 * [panel_lock](#panel_lock) `[LOCK_STATE]`
+* [channel_change](#channel_change) `CHANGE_TO`
+* [volume_change](#volume_change) `CHANGE_TO`
 * [device_name](#device_name) `(DEVICE_NAME)`
 * [osd](#osd) `[OSD_ENABLED]`
 * [all_keys_lock](#all_keys_lock) `[LOCK_STATE]`
@@ -115,7 +122,7 @@ Options:
 * [panel](#panel) `[PANEL_STATE]`
 * [script](#script) `[OPTIONS] SCRIPT_FILE`
 
-#### status
+#### status<a id="status"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET status
 
@@ -141,51 +148,79 @@ Data:
   N_TIME_NF             int
   F_TIME_NF             int
 ```
-#### serial_number
+#### video<a id="video"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET video
+
+Data:
+  CONTRAST           int (0-100)
+  BRIGHTNESS         int (0-100)
+  SHARPNESS          int (0-100)
+  COLOR              int (0-100)
+  TINT               int (0-100)
+  COLOR_TONE_STATE   COOL_2 | COOL_1 | NORMAL | WARM_1 | WARM_2 | OFF
+  COLOR_TEMPERATURE  int
+  _IGNORE            int (0-0)
+```
+#### rgb<a id="rgb"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET rgb
+
+Data:
+  CONTRAST           int (0-100)
+  BRIGHTNESS         int (0-100)
+  COLOR_TONE_STATE   COOL_2 | COOL_1 | NORMAL | WARM_1 | WARM_2 | OFF
+  COLOR_TEMPERATURE  int
+  _IGNORE            int (0-0)
+  RED_GAIN           int
+  GREEN_GAIN         int
+  BLUE_GAIN          int
+```
+#### serial_number<a id="serial_number"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET serial_number
 
 Data:
   SERIAL_NUMBER  str
 ```
-#### software_version
+#### software_version<a id="software_version"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET software_version
 
 Data:
   SOFTWARE_VERSION  str
 ```
-#### model_number
+#### model_number<a id="model_number"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET model_number
 
 Data:
   MODEL_SPECIES  PDP | LCD | DLP | LED | CRT | OLED
-  MODEL_NUMBER   int
+  MODEL_CODE     int
   TV_SUPPORT     SUPPORTED | NOT_SUPPORTED
 ```
-#### power
+#### power<a id="power"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET power [POWER_STATE]
 
 Data:
   POWER_STATE  OFF | ON | REBOOT
 ```
-#### volume
+#### volume<a id="volume"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET volume [VOLUME]
 
 Data:
   VOLUME  int (0-100)
 ```
-#### mute
+#### mute<a id="mute"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET mute [MUTE_STATE]
 
 Data:
   MUTE_STATE  OFF | ON
 ```
-#### input_source
+#### input_source<a id="input_source"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET input_source [INPUT_SOURCE_STATE]
 
@@ -199,7 +234,7 @@ Data:
                       INTERNAL_USB | URL_LAUNCHER | IWB
 
 ```
-#### picture_aspect
+#### picture_aspect<a id="picture_aspect"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET picture_aspect [PICTURE_ASPECT_STATE]
 
@@ -212,42 +247,56 @@ Data:
                         VIDEO_WIDE_ZOOM | VIDEO_21_9
 
 ```
-#### mdc_connection
+#### screen_mode<a id="screen_mode"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET screen_mode [SCREEN_MODE_STATE]
+
+Data:
+  SCREEN_MODE_STATE  MODE_16_9 | MODE_ZOOM | MODE_4_3 | MODE_WIDE_ZOOM
+```
+#### screen_size<a id="screen_size"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET screen_size
+
+Data:
+  INCHES  int (0-255)
+```
+#### mdc_connection<a id="mdc_connection"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET mdc_connection
 
 Data:
   MDC_CONNECTION_TYPE  RS232C | RJ45
 ```
-#### contrast
+#### contrast<a id="contrast"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET contrast [CONTRAST]
 
 Data:
   CONTRAST  int (0-100)
 ```
-#### brightness
+#### brightness<a id="brightness"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET brightness [BRIGHTNESS]
 
 Data:
   BRIGHTNESS  int (0-100)
 ```
-#### sharpness
+#### sharpness<a id="sharpness"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET sharpness [SHARPNESS]
 
 Data:
   SHARPNESS  int (0-100)
 ```
-#### color
+#### color<a id="color"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET color [COLOR]
 
 Data:
   COLOR  int (0-100)
 ```
-#### tint
+#### tint<a id="tint"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET tint [TINT]
 
@@ -259,32 +308,32 @@ Usage: samsung-mdc [OPTIONS] TARGET tint [TINT]
 Data:
   TINT  int (0-100)
 ```
-#### h_position
+#### h_position<a id="h_position"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET h_position H_POSITION_MOVE_TO
 
 Data:
   H_POSITION_MOVE_TO  LEFT | RIGHT
 ```
-#### v_position
+#### v_position<a id="v_position"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET v_position V_POSITION_MOVE_TO
 
 Data:
   V_POSITION_MOVE_TO  UP | DOWN
 ```
-#### auto_power
+#### auto_power<a id="auto_power"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET auto_power [AUTO_POWER_STATE]
 
 Data:
   AUTO_POWER_STATE  OFF | ON
 ```
-#### clear_menu
+#### clear_menu<a id="clear_menu"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET clear_menu
 ```
-#### ir_state
+#### ir_state<a id="ir_state"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET ir_state [IR_STATE]
 
@@ -296,39 +345,54 @@ Usage: samsung-mdc [OPTIONS] TARGET ir_state [IR_STATE]
 Data:
   IR_STATE  DISABLED | ENABLED
 ```
-#### rgb_contrast
+#### rgb_contrast<a id="rgb_contrast"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET rgb_contrast [CONTRAST]
 
 Data:
   CONTRAST  int (0-100)
 ```
-#### rgb_brightness
+#### rgb_brightness<a id="rgb_brightness"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET rgb_brightness [BRIGHTNESS]
 
 Data:
   BRIGHTNESS  int (0-100)
 ```
-#### auto_adjustment_on
+#### auto_adjustment_on<a id="auto_adjustment_on"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET auto_adjustment_on
 ```
-#### color_tone
+#### color_tone<a id="color_tone"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET color_tone [COLOR_TONE_STATE]
 
 Data:
   COLOR_TONE_STATE  COOL_2 | COOL_1 | NORMAL | WARM_1 | WARM_2 | OFF
 ```
-#### standby
+#### color_temperature<a id="color_temperature"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET color_temperature [HECTO_KELVIN]
+
+  Color temperature function.
+
+  Unit is hectoKelvin (hK) (x*100 Kelvin) (example: 28 = 2800K).
+
+  Supported values - 28, 30, 35, 40... 160.
+
+  For older models: 0-10=(x*100K + 5000K), 253=2800K, 254=3000K, 255=4000K
+
+Data:
+  HECTO_KELVIN  int
+```
+#### standby<a id="standby"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET standby [STANDBY_STATE]
 
 Data:
   STANDBY_STATE  OFF | ON | AUTO
 ```
-#### auto_lamp
+#### auto_lamp<a id="auto_lamp"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET auto_lamp [MAX_TIME MAX_LAMP_VALUE
                    MIN_TIME MIN_LAMP_VALUE]
@@ -344,7 +408,7 @@ Data:
   MIN_TIME        time (format: %H:%M:%S)
   MIN_LAMP_VALUE  int (0-100)
 ```
-#### manual_lamp
+#### manual_lamp<a id="manual_lamp"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET manual_lamp [LAMP_VALUE]
 
@@ -356,28 +420,42 @@ Usage: samsung-mdc [OPTIONS] TARGET manual_lamp [LAMP_VALUE]
 Data:
   LAMP_VALUE  int (0-100)
 ```
-#### inverse
+#### inverse<a id="inverse"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET inverse [INVERSE_STATE]
 
 Data:
   INVERSE_STATE  OFF | ON
 ```
-#### safety_lock
+#### safety_lock<a id="safety_lock"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET safety_lock [LOCK_STATE]
 
 Data:
   LOCK_STATE  OFF | ON
 ```
-#### panel_lock
+#### panel_lock<a id="panel_lock"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET panel_lock [LOCK_STATE]
 
 Data:
   LOCK_STATE  OFF | ON
 ```
-#### device_name
+#### channel_change<a id="channel_change"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET channel_change CHANGE_TO
+
+Data:
+  CHANGE_TO  UP | DOWN
+```
+#### volume_change<a id="volume_change"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET volume_change CHANGE_TO
+
+Data:
+  CHANGE_TO  UP | DOWN
+```
+#### device_name<a id="device_name"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET device_name
 
@@ -387,14 +465,14 @@ Usage: samsung-mdc [OPTIONS] TARGET device_name
 Data:
   DEVICE_NAME  str
 ```
-#### osd
+#### osd<a id="osd"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET osd [OSD_ENABLED]
 
 Data:
   OSD_ENABLED  bool
 ```
-#### all_keys_lock
+#### all_keys_lock<a id="all_keys_lock"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET all_keys_lock [LOCK_STATE]
 
@@ -405,28 +483,28 @@ Usage: samsung-mdc [OPTIONS] TARGET all_keys_lock [LOCK_STATE]
 Data:
   LOCK_STATE  OFF | ON
 ```
-#### model_name
+#### model_name<a id="model_name"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET model_name
 
 Data:
   MODEL_NAME  str
 ```
-#### energy_saving
+#### energy_saving<a id="energy_saving"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET energy_saving [ENERGY_SAVING_STATE]
 
 Data:
   ENERGY_SAVING_STATE  OFF | LOW | MEDIUM | HIGH | PICTURE_OFF
 ```
-#### reset
+#### reset<a id="reset"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET reset RESET_TARGET
 
 Data:
   RESET_TARGET  PICTURE | SOUND | SETUP | ALL | SCREEN_DISPLAY
 ```
-#### osd_type
+#### osd_type<a id="osd_type"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET osd_type [OSD_TYPE OSD_ENABLED]
 
@@ -434,7 +512,7 @@ Data:
   OSD_TYPE     SOURCE | NOT_OPTIMUM_MODE | NO_SIGNAL | MDC | SCHEDULE_CHANNEL
   OSD_ENABLED  bool
 ```
-#### timer_13
+#### timer_13<a id="timer_13"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET timer_13 TIMER_ID [ON_TIME ON_ENABLED
                    OFF_TIME OFF_ENABLED VOLUME INPUT_SOURCE_STATE
@@ -467,7 +545,7 @@ Data:
 
   MANUAL_WEEKDAY      list(,) SUN | MON | TUE | WED | THU | FRI | SAT
 ```
-#### timer_15
+#### timer_15<a id="timer_15"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET timer_15 TIMER_ID [ON_TIME ON_ENABLED
                    OFF_TIME OFF_ENABLED ON_REPEAT ON_MANUAL_WEEKDAY OFF_REPEAT
@@ -512,7 +590,7 @@ Data:
                       OFF_TIMER_ONLY_APPLY
 
 ```
-#### clock_m
+#### clock_m<a id="clock_m"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET clock_m [DATETIME]
 
@@ -526,7 +604,7 @@ Data:
             %Y-%m-%dT%H:%M / %Y-%m-%d %H:%M)
 
 ```
-#### virtual_remote
+#### virtual_remote<a id="virtual_remote"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET virtual_remote REMOTE_KEY_CODE
 
@@ -548,28 +626,28 @@ Data:
                    KEY_CONTENT | DISCRET_POWER_OFF | KEY_3D
 
 ```
-#### network_standby
+#### network_standby<a id="network_standby"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET network_standby [NETWORK_STANDBY_STATE]
 
 Data:
   NETWORK_STANDBY_STATE  OFF | ON
 ```
-#### auto_id_setting
+#### auto_id_setting<a id="auto_id_setting"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET auto_id_setting [AUTO_ID_SETTING_STATE]
 
 Data:
   AUTO_ID_SETTING_STATE  START | END
 ```
-#### display_id
+#### display_id<a id="display_id"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET display_id DISPLAY_ID_STATE
 
 Data:
   DISPLAY_ID_STATE  OFF | ON
 ```
-#### clock_s
+#### clock_s<a id="clock_s"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET clock_s [DATETIME]
 
@@ -583,28 +661,28 @@ Data:
             %Y-%m-%dT%H:%M / %Y-%m-%d %H:%M)
 
 ```
-#### launcher_play_via
+#### launcher_play_via<a id="launcher_play_via"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET launcher_play_via [PLAY_VIA_MODE]
 
 Data:
   PLAY_VIA_MODE  MAGIC_INFO | URL_LAUNCHER | MAGIC_IWB
 ```
-#### launcher_url_address
+#### launcher_url_address<a id="launcher_url_address"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET launcher_url_address [URL_ADDRESS]
 
 Data:
   URL_ADDRESS  str
 ```
-#### panel
+#### panel<a id="panel"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET panel [PANEL_STATE]
 
 Data:
   PANEL_STATE  ON | OFF
 ```
-#### script
+#### script<a id="script"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET script [OPTIONS] SCRIPT_FILE
 
@@ -646,7 +724,7 @@ Options:
   --help                       Show this message and exit.
 ```
 
-## Python example
+## Python example<a id="python-example"></a>
 ```python3
 import asyncio
 from samsung_mdc import MDC

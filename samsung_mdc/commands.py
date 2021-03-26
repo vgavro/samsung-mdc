@@ -5,16 +5,6 @@ from .fields import Enum as EnumField, Int, Bool, Str, Time, DateTime, Bitmask
 from .utils import parse_enum_bitmask
 
 
-class DAY_PART(Enum):
-    PM = 0x00
-    AM = 0x01
-
-
-class LOCK_STATE(Enum):
-    OFF = 0x00
-    ON = 0x01
-
-
 class SERIAL_NUMBER(Command):
     CMD = 0x0B
     GET, SET = True, False
@@ -43,9 +33,9 @@ class MODEL_NUMBER(Command):
         SUPPORTED = 0x00
         NOT_SUPPORTED = 0x01
 
-    # NOTE: Actually there is list of MODEL_NUMBER codes in specification,
-    # but it's TOO long
-    DATA = [MODEL_SPECIES, Int('MODEL_NUMBER'), TV_SUPPORT]
+    # NOTE: Actually there is list of MODEL_CODE in specification,
+    # but it's TOO long, and it's TOO old (newer models gets new code)
+    DATA = [MODEL_SPECIES, Int('MODEL_CODE'), TV_SUPPORT]
 
 
 class POWER(Command):
@@ -142,6 +132,26 @@ class PICTURE_ASPECT(Command):
         VIDEO_21_9 = 0x32
 
     DATA = [PICTURE_ASPECT_STATE]
+
+
+class SCREEN_MODE(Command):
+    CMD = 0x18
+    GET, SET = True, True
+
+    class SCREEN_MODE_STATE(Enum):
+        MODE_16_9 = 0x01
+        MODE_ZOOM = 0x04
+        MODE_4_3 = 0x0B
+        MODE_WIDE_ZOOM = 0x31
+
+    DATA = [SCREEN_MODE_STATE]
+
+
+class SCREEN_SIZE(Command):
+    CMD = 0x19
+    GET, SET = True, False
+
+    DATA = [Int('INCHES', range(256))]
 
 
 class MDC_CONNECTION(Command):
@@ -287,6 +297,22 @@ class COLOR_TONE(Command):
     DATA = [COLOR_TONE_STATE]
 
 
+class COLOR_TEMPERATURE(Command):
+    """
+    Color temperature function.
+
+    Unit is hectoKelvin (hK) (x*100 Kelvin) (example: 28 = 2800K).
+
+    Supported values - 28, 30, 35, 40... 160.
+
+    For older models: 0-10=(x*100K + 5000K), 253=2800K, 254=3000K, 255=4000K
+    """
+    CMD = 0x3F
+    GET, SET = True, True
+
+    DATA = [Int('HECTO_KELVIN')]
+
+
 class STANDBY(Command):
     CMD = 0x4A
     GET, SET = True, True
@@ -343,13 +369,45 @@ class INVERSE(Command):
 class SAFETY_LOCK(Command):
     CMD = 0x5D
     GET, SET = True, True
+
+    class LOCK_STATE(Enum):
+        OFF = 0x00
+        ON = 0x01
+
     DATA = [LOCK_STATE]
 
 
 class PANEL_LOCK(Command):
     CMD = 0x5F
     GET, SET = True, True
+
+    class LOCK_STATE(Enum):
+        OFF = 0x00
+        ON = 0x01
+
     DATA = [LOCK_STATE]
+
+
+class CHANNEL_CHANGE(Command):
+    CMD = 0x61
+    GET, SET = False, True
+
+    class CHANGE_TO(Enum):
+        UP = 0x00
+        DOWN = 0x01
+
+    DATA = [CHANGE_TO]
+
+
+class VOLUME_CHANGE(Command):
+    CMD = 0x62
+    GET, SET = False, True
+
+    class CHANGE_TO(Enum):
+        UP = 0x00
+        DOWN = 0x01
+
+    DATA = [CHANGE_TO]
 
 
 class DEVICE_NAME(Command):
@@ -685,4 +743,26 @@ class STATUS(Command):
         POWER.POWER_STATE, VOLUME.VOLUME, MUTE.MUTE_STATE,
         INPUT_SOURCE.INPUT_SOURCE_STATE, PICTURE_ASPECT.PICTURE_ASPECT_STATE,
         Int('N_TIME_NF'), Int('F_TIME_NF')
+    ]
+
+
+class VIDEO(Command):
+    CMD = 0x04
+    GET, SET = True, False
+    DATA = [
+        Int('CONTRAST', range(101)), Int('BRIGHTNESS', range(101)),
+        Int('SHARPNESS', range(101)), Int('COLOR', range(101)),
+        Int('TINT', range(101)), COLOR_TONE.COLOR_TONE_STATE,
+        Int('COLOR_TEMPERATURE'), Int('_IGNORE', range(1)),
+    ]
+
+
+class RGB(Command):
+    CMD = 0x06
+    GET, SET = True, False
+    DATA = [
+        Int('CONTRAST', range(101)), Int('BRIGHTNESS', range(101)),
+        COLOR_TONE.COLOR_TONE_STATE, Int('COLOR_TEMPERATURE'),
+        Int('_IGNORE', range(1)),
+        Int('RED_GAIN'), Int('GREEN_GAIN'), Int('BLUE_GAIN'),
     ]
