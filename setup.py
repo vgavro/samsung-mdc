@@ -6,19 +6,27 @@ requires = [
 ]
 
 setup(
-    name='samsung-mdc',
-    version='0.0.1',
-    description='http://github.com/vgavro/samsung-mdc',
-    long_description='http://github.com/vgavro/samsung-mdc',
+    name='python-samsung-mdc',
+    version='1.0.0',
+    description=('Samsung Multiple Display Control (MDC) '
+                 'protocol implementation (asyncio library + CLI interface)'),
+    long_description=open('README.md').read(),
+    long_description_content_type='text/markdown',
     license='BSD',
     classifiers=[
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Python',
+        'Development Status :: 5 - Production/Stable',
+        'Operating System :: OS Independent',
+        'Topic :: Multimedia :: Video :: Display',
+        'Topic :: Home Automation',
+        'Topic :: Utilities',
     ],
+    python_requires='>=3.7,<4.0',
     author='Victor Gavro',
     author_email='vgavro@gmail.com',
     url='http://github.com/vgavro/samsung-mdc',
-    keywords='',
+    keywords=['samsung', 'mdc'],
     packages=find_packages(),
     install_requires=requires,
     entry_points={
