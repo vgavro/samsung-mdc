@@ -25,6 +25,10 @@ class CommandMcs(type):
             EnumField(x) if isinstance(x, type) and issubclass(x, Enum) else x
             for x in dict['DATA']
         ]
+        dict['RESPONSE_DATA'] = [
+            EnumField(x) if isinstance(x, type) and issubclass(x, Enum) else x
+            for x in dict.get('RESPONSE_DATA', dict['DATA'])
+        ]
 
         cls = type.__new__(mcs, name, bases, dict)
 
@@ -66,7 +70,7 @@ class Command(metaclass=CommandMcs):
     @classmethod
     def parse_response_data(cls, data, strict_enum=True):
         rv, cursor = [], 0
-        for field in cls.DATA:
+        for field in cls.RESPONSE_DATA:
             if not field.parse_len:
                 rv.append(field.parse(data[cursor:]))
                 cursor = None

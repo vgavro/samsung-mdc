@@ -6,7 +6,7 @@ It allows you to control a variety of different sources (TV, Monitor) through th
 
 [MDC Protocol specification - v13.7c 2016-02-23](https://vgavro.github.io/samsung-mdc/MDC-Protocol_v13.7c_2016-02-23.pdf)
 
-* Implemented *56* commands
+* Implemented *57* commands
 * Easy to extend using simple declarative API - see [samsung_mdc/commmands.py](https://github.com/vgavro/samsung-mdc/blob/master/samsung_mdc/commands.py)
 * Detailed [CLI](#usage) help and parameters validation
 * Run commands async on numerous targets (using asyncio)
@@ -114,6 +114,7 @@ Options:
 * [clock_m](#clock_m) `[DATETIME]`
 * [virtual_remote](#virtual_remote) `REMOTE_KEY_CODE`
 * [network_standby](#network_standby) `[NETWORK_STANDBY_STATE]`
+* [dst](#dst) `[DST_STATE START_MONTH START_WEEK START_DAY_OF_WEEK START_HOUR START_MINUTE END_MONTH END_WEEK END_DAY_OF_WEEK END_HOUR END_MINUTE OFFSET]`
 * [auto_id_setting](#auto_id_setting) `[AUTO_ID_SETTING_STATE]`
 * [display_id](#display_id) `DISPLAY_ID_STATE`
 * [clock_s](#clock_s) `[DATETIME]`
@@ -632,6 +633,30 @@ Usage: samsung-mdc [OPTIONS] TARGET network_standby [NETWORK_STANDBY_STATE]
 
 Data:
   NETWORK_STANDBY_STATE  OFF | ON
+```
+#### dst<a id="dst"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET dst [DST_STATE START_MONTH START_WEEK
+                   START_DAY_OF_WEEK START_HOUR START_MINUTE END_MONTH
+                   END_WEEK END_DAY_OF_WEEK END_HOUR END_MINUTE OFFSET]
+
+Data:
+  DST_STATE          OFF | AUTO | MANUAL
+  START_MONTH        JAN | FEB | MAR | APR | MAY | JUN | JUL | AUG | SEP | OCT
+                     | NOV | DEC
+
+  START_WEEK         WEEK_1 | WEEK_2 | WEEK_3 | WEEK_4 | WEEK_LAST
+  START_DAY_OF_WEEK  SUN | MON | TUE | WED | THU | FRI | SAT
+  START_HOUR         int (0-23)
+  START_MINUTE       int (0-59)
+  END_MONTH          JAN | FEB | MAR | APR | MAY | JUN | JUL | AUG | SEP | OCT
+                     | NOV | DEC
+
+  END_WEEK           WEEK_1 | WEEK_2 | WEEK_3 | WEEK_4 | WEEK_LAST
+  END_DAY_OF_WEEK    SUN | MON | TUE | WED | THU | FRI | SAT
+  END_HOUR           int (0-23)
+  END_MINUTE         int (0-59)
+  OFFSET             PLUS_1_00 | PLUS_2_00
 ```
 #### auto_id_setting<a id="auto_id_setting"></a>
 ```

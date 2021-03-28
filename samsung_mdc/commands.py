@@ -683,6 +683,67 @@ class NETWORK_STANDBY(Command):
     DATA = [NETWORK_STANDBY_STATE]
 
 
+class DST(Command):
+    CMD = 0xB6
+    GET, SET = True, True
+
+    class DST_STATE(Enum):
+        OFF = 0x00
+        AUTO = 0x01
+        MANUAL = 0x02
+
+    class MONTH(Enum):
+        JAN = 0x00
+        FEB = 0x01
+        MAR = 0x02
+        APR = 0x03
+        MAY = 0x04
+        JUN = 0x05
+        JUL = 0x06
+        AUG = 0x07
+        SEP = 0x08
+        OCT = 0x09
+        NOV = 0x0A
+        DEC = 0x0B
+
+    class WEEK(Enum):
+        WEEK_1 = 0x00
+        WEEK_2 = 0x01
+        WEEK_3 = 0x02
+        WEEK_4 = 0x03
+        WEEK_LAST = 0x04
+
+    class DAY_OF_WEEK(Enum):
+        SUN = 0x00
+        MON = 0x01
+        TUE = 0x02
+        WED = 0x03
+        THU = 0x04
+        FRI = 0x05
+        SAT = 0x06
+
+    class OFFSET(Enum):
+        PLUS_1_00 = 0x00
+        PLUS_2_00 = 0x01
+
+    DATA = [
+        DST_STATE,
+        EnumField(MONTH, 'START_MONTH'),
+        EnumField(WEEK, 'START_WEEK'),
+        EnumField(DAY_OF_WEEK, 'START_DAY_OF_WEEK'),
+        Int('START_HOUR', range(24)),
+        Int('START_MINUTE', range(60)),
+        EnumField(MONTH, 'END_MONTH'),
+        EnumField(WEEK, 'END_WEEK'),
+        EnumField(DAY_OF_WEEK, 'END_DAY_OF_WEEK'),
+        Int('END_HOUR', range(24)),
+        Int('END_MINUTE', range(60)),
+        OFFSET,
+    ]
+
+    RESPONSE_DATA = DATA + [Bool('TUNER_SUPPORT')]
+
+
 class AUTO_ID_SETTING(Command):
     CMD = 0xB8
     GET, SET = True, True
