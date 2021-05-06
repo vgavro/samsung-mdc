@@ -10,6 +10,7 @@ import asyncio
 import re
 import os.path
 from sys import argv as sys_argv
+import platform
 
 import click
 
@@ -472,6 +473,9 @@ def register_command(command):
                 if ctx.obj['verbose']:
                     raise
 
+        if platform.system() == 'Windows':
+            asyncio.set_event_loop_policy(
+                asyncio.WindowsSelectorEventLoopPolicy())
         loop = asyncio.get_event_loop()
         loop.run_until_complete(asyncio.wait([
             loop.create_task(call(*target))
@@ -636,6 +640,9 @@ def script(ctx, script_file, sleep, retry_command, retry_command_sleep,
             if ctx.obj['verbose']:
                 raise last_exc
 
+    if platform.system() == 'Windows':
+        asyncio.set_event_loop_policy(
+            asyncio.WindowsSelectorEventLoopPolicy())
     loop = asyncio.get_event_loop()
     loop.run_until_complete(asyncio.wait([
         loop.create_task(call(*target))
