@@ -40,7 +40,7 @@ pip3 install git+https://github.com/vgavro/samsung-mdc
 
 # NOTE: python "Scripts" folder is not in %PATH% in Windows by default,
 # so you may want to create alias for Git Bash
-echo alias samsung-mdc=\'$(cygpath $(python3 -m site --user-site))/../Scripts/samsung-mdc.exe\' >> ~/.bash_profile
+echo alias samsung-mdc=\'python3 -m samsung_mdc\' >> ~/.bash_profile
 source ~/.bash_profile
 
 # test it
