@@ -31,6 +31,22 @@ python3 -m venv venv
 ./venv/bin/samsung-mdc --help
 ```
 
+### Windows install <a id="windows-install"></a>
+1. Install Git && Git Bash: https://git-scm.com/download/win
+2. Install Python 3 latest release (tested with 3.9): https://www.python.org/downloads/windows/
+3. Run "Git Bash", type in console:
+```
+pip3 install git+https://github.com/vgavro/samsung-mdc
+
+# NOTE: python "Scripts" folder is not in %PATH% in Windows by default,
+# so you may want to create alias for Git Bash
+echo alias samsung-mdc=\'$(cygpath $(python -m site --user-site))/../Scripts/samsung-mdc.exe\' > ~/.bash_profile
+source ~/.bash_profile
+
+# test it
+samsung-mdc --help
+```
+
 ## Usage<a id="usage"></a>
 {{usage}}
 
