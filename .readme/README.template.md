@@ -19,8 +19,8 @@ Not implemented: some more commands (PRs are welcome)
 ## Install<a id="install"></a>
 
 ```
-# global
-pip3 install git+https://github.com/vgavro/samsung-mdc
+# global install/upgrade
+sudo pip3 install --upgrade python-samsung-mdc
 samsung-mdc --help
 
 # local
@@ -36,7 +36,7 @@ python3 -m venv venv
 2. Install Python 3 latest release (tested with 3.9): https://www.python.org/downloads/windows/
 3. Run "Git Bash", type in console:
 ```
-pip3 install git+https://github.com/vgavro/samsung-mdc
+pip3 install --upgrade python-samsung-mdc
 
 # NOTE: python "Scripts" folder is not in %PATH% in Windows by default,
 # so you may want to create alias for Git Bash
