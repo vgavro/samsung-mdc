@@ -154,6 +154,17 @@ class SCREEN_SIZE(Command):
     DATA = [Int('INCHES', range(256))]
 
 
+class MAGICINFO_SERVER(Command):
+    """
+    MagicInfo Server URL (example: "http://example.com:80")
+    """
+    CMD = 0x1C
+    SUBCMD = 0x82
+    GET, SET = True, True
+
+    DATA = [Str('MAGICINFO_SERVER_URL')]
+
+
 class MDC_CONNECTION(Command):
     CMD = 0x1D
     GET, SET = True, False
