@@ -6,7 +6,7 @@ It allows you to control a variety of different sources (TV, Monitor) through th
 
 [MDC Protocol specification - v13.7c 2016-02-23](https://vgavro.github.io/samsung-mdc/MDC-Protocol_v13.7c_2016-02-23.pdf)
 
-* Implemented *57* commands
+* Implemented *58* commands
 * Easy to extend using simple declarative API - see [samsung_mdc/commmands.py](https://github.com/vgavro/samsung-mdc/blob/master/samsung_mdc/commands.py)
 * Detailed [CLI](#usage) help and parameters validation
 * Run commands async on numerous targets (using asyncio)
@@ -94,6 +94,7 @@ Options:
 * [picture_aspect](#picture_aspect) `[PICTURE_ASPECT_STATE]`
 * [screen_mode](#screen_mode) `[SCREEN_MODE_STATE]`
 * [screen_size](#screen_size) `(INCHES)`
+* [magicinfo_server](#magicinfo_server) `[MAGICINFO_SERVER_URL]`
 * [mdc_connection](#mdc_connection) `(MDC_CONNECTION_TYPE)`
 * [contrast](#contrast) `[CONTRAST]`
 * [brightness](#brightness) `[BRIGHTNESS]`
@@ -277,6 +278,15 @@ Usage: samsung-mdc [OPTIONS] TARGET screen_size
 
 Data:
   INCHES  int (0-255)
+```
+#### magicinfo_server<a id="magicinfo_server"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET magicinfo_server [MAGICINFO_SERVER_URL]
+
+  MagicInfo Server URL (example: "http://example.com:80")
+
+Data:
+  MAGICINFO_SERVER_URL  str
 ```
 #### mdc_connection<a id="mdc_connection"></a>
 ```

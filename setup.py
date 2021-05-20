@@ -7,7 +7,7 @@ requires = [
 
 setup(
     name='python-samsung-mdc',
-    version='1.2.2',
+    version='1.2.3',
     description=('Samsung Multiple Display Control (MDC) '
                  'protocol implementation (asyncio library + CLI interface)'),
     long_description=open('README.md').read(),
