@@ -635,7 +635,7 @@ class VIRTUAL_REMOTE(Command):
     CMD = 0xB0
     GET, SET = False, True
 
-    class REMOTE_KEY_CODE(Enum):
+    class KEY_CODE(Enum):
         KEY_SOURCE = 0x01
         KEY_POWER = 0x02
         KEY_1 = 0x04
@@ -680,7 +680,19 @@ class VIRTUAL_REMOTE(Command):
         DISCRET_POWER_OFF = 0x98
         KEY_3D = 0x9F
 
-    DATA = [REMOTE_KEY_CODE]
+    # # Corresponding to MediaKey API
+    # # https://docs.tizen.org/application/web/api/latest/device_api/mobile/tizen/mediakey.html  # noqa
+    # class MEDIA_KEY_CODE(Enum):
+    #     PLAY = KEY_CODE.KEY_PLAY
+    #     STOP = KEY_CODE.KEY_STOP
+    #     PAUSE = KEY_CODE.KEY_PAUSE
+    #     # PREVIOUS = ??
+    #     # NEXT = ??
+    #     FAST_FORWARD = KEY_CODE.KEY_FF
+    #     REWIND - KEY_CODE.KEY_REW
+    #     # PLAY_PAUSE = ??
+
+    DATA = [KEY_CODE]
 
 
 class NETWORK_STANDBY(Command):

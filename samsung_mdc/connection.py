@@ -24,7 +24,7 @@ async def wait_for(aw, timeout, reason):
         raise MDCTimeoutError(reason) from exc
 
 
-class MDC_CONNECTION_MODE(Enum):
+class CONNECTION_MODE(Enum):
     TCP = 'tcp'
     SERIAL = 'serial'
 
@@ -32,10 +32,10 @@ class MDC_CONNECTION_MODE(Enum):
 class MDCConnection:
     reader, writer = None, None
 
-    def __init__(self, target, mode=MDC_CONNECTION_MODE.TCP, timeout=5,
+    def __init__(self, target, mode=CONNECTION_MODE.TCP, timeout=5,
                  connect_timeout=None, verbose=False, **connection_kwargs):
         self.target = target
-        self.mode = MDC_CONNECTION_MODE(mode)
+        self.mode = CONNECTION_MODE(mode)
         self.connection_kwargs = connection_kwargs
 
         self.timeout = timeout
@@ -44,7 +44,7 @@ class MDCConnection:
             partial(print, self.target) if verbose is True else verbose)
 
     async def open(self):
-        if self.mode == MDC_CONNECTION_MODE.TCP:
+        if self.mode == CONNECTION_MODE.TCP:
             if isinstance(self.target, (list, tuple)):
                 # make target be compatible with socket.__init__
                 target, port = self.target
