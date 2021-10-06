@@ -4,7 +4,7 @@ This is implementation of Samsung MDC (Multiple Display Control) protocol on **p
 
 It allows you to control a variety of different sources (TV, Monitor) through the built-in RS-232C or Ethernet interface.
 
-[MDC Protocol specification - v13.7c 2016-02-23](https://vgavro.github.io/samsung-mdc/MDC-Protocol_v13.7c_2016-02-23.pdf)
+[MDC Protocol specification - v15.0 2020-11-06](https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf)
 
 * Implemented *{{command_count}}* commands
 * Easy to extend using simple declarative API - see [samsung_mdc/commmands.py](https://github.com/vgavro/samsung-mdc/blob/master/samsung_mdc/commands.py)
