@@ -4,7 +4,7 @@ This is implementation of Samsung MDC (Multiple Display Control) protocol on **p
 
 It allows you to control a variety of different sources (TV, Monitor) through the built-in RS-232C or Ethernet interface.
 
-[MDC Protocol specification - v13.7c 2016-02-23](https://vgavro.github.io/samsung-mdc/MDC-Protocol_v13.7c_2016-02-23.pdf)
+[MDC Protocol specification - v15.0 2020-11-06](https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf)
 
 * Implemented *58* commands
 * Easy to extend using simple declarative API - see [samsung_mdc/commmands.py](https://github.com/vgavro/samsung-mdc/blob/master/samsung_mdc/commands.py)
@@ -129,7 +129,7 @@ Options:
 * [timer_13](#timer_13) `TIMER_ID [ON_TIME ON_ENABLED OFF_TIME OFF_ENABLED VOLUME INPUT_SOURCE_STATE HOLIDAY_APPLY REPEAT MANUAL_WEEKDAY]`
 * [timer_15](#timer_15) `TIMER_ID [ON_TIME ON_ENABLED OFF_TIME OFF_ENABLED ON_REPEAT ON_MANUAL_WEEKDAY OFF_REPEAT OFF_MANUAL_WEEKDAY VOLUME INPUT_SOURCE_STATE HOLIDAY_APPLY]`
 * [clock_m](#clock_m) `[DATETIME]`
-* [virtual_remote](#virtual_remote) `REMOTE_KEY_CODE`
+* [virtual_remote](#virtual_remote) `KEY_CODE`
 * [network_standby](#network_standby) `[NETWORK_STANDBY_STATE]`
 * [dst](#dst) `[DST_STATE START_MONTH START_WEEK START_DAY_OF_WEEK START_HOUR START_MINUTE END_MONTH END_WEEK END_DAY_OF_WEEK END_HOUR END_MINUTE OFFSET]`
 * [auto_id_setting](#auto_id_setting) `[AUTO_ID_SETTING_STATE]`
@@ -633,7 +633,7 @@ Data:
 ```
 #### virtual_remote<a id="virtual_remote"></a>
 ```
-Usage: samsung-mdc [OPTIONS] TARGET virtual_remote REMOTE_KEY_CODE
+Usage: samsung-mdc [OPTIONS] TARGET virtual_remote KEY_CODE
 
   This function support that MDC command can work same as remote control.
 
@@ -641,16 +641,15 @@ Usage: samsung-mdc [OPTIONS] TARGET virtual_remote REMOTE_KEY_CODE
   key works as Info.
 
 Data:
-  REMOTE_KEY_CODE  KEY_SOURCE | KEY_POWER | KEY_1 | KEY_2 | KEY_3 |
-                   KEY_VOLUME_UP | KEY_4 | KEY_5 | KEY_6 | KEY_VOLUME_DOWN |
-                   KEY_7 | KEY_8 | KEY_9 | KEY_MUTE | KEY_CHANNEL_DOWN | KEY_0
-                   | KEY_CHANNEL_UP | KEY_GREEN | KEY_YELLOW | KEY_CYAN |
-                   KEY_MENU | KEY_DISPLAY | KEY_DIGIT | KEY_PIP_TV_VIDEO |
-                   KEY_EXIT | KEY_REW | KEY_STOP | KEY_PLAY | KEY_FF |
-                   KEY_PAUSE | KEY_TOOLS | KEY_RETURN | KEY_MAGICINFO_LITE |
-                   KEY_CURSOR_UP | KEY_CURSOR_DOWN | KEY_CURSOR_RIGHT |
-                   KEY_CURSOR_LEFT | KEY_ENTER | KEY_RED | KEY_LOCK |
-                   KEY_CONTENT | DISCRET_POWER_OFF | KEY_3D
+  KEY_CODE  KEY_SOURCE | KEY_POWER | KEY_1 | KEY_2 | KEY_3 | KEY_VOLUME_UP |
+            KEY_4 | KEY_5 | KEY_6 | KEY_VOLUME_DOWN | KEY_7 | KEY_8 | KEY_9 |
+            KEY_MUTE | KEY_CHANNEL_DOWN | KEY_0 | KEY_CHANNEL_UP | KEY_GREEN |
+            KEY_YELLOW | KEY_CYAN | KEY_MENU | KEY_DISPLAY | KEY_DIGIT |
+            KEY_PIP_TV_VIDEO | KEY_EXIT | KEY_REW | KEY_STOP | KEY_PLAY |
+            KEY_FF | KEY_PAUSE | KEY_TOOLS | KEY_RETURN | KEY_MAGICINFO_LITE |
+            KEY_CURSOR_UP | KEY_CURSOR_DOWN | KEY_CURSOR_RIGHT |
+            KEY_CURSOR_LEFT | KEY_ENTER | KEY_RED | KEY_LOCK | KEY_CONTENT |
+            DISCRET_POWER_OFF | KEY_3D
 
 ```
 #### network_standby<a id="network_standby"></a>
