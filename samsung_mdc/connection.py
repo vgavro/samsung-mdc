@@ -3,7 +3,7 @@ from functools import partial
 from enum import Enum
 import asyncio
 
-from .exceptions import MDCResponseError, MDCTimeoutError
+from .exceptions import MDCResponseError, MDCTimeoutError, MDCTLSRequired
 
 
 HEADER_CODE = 0xAA
@@ -57,6 +57,28 @@ class MDCConnection:
                 await wait_for(
                     asyncio.open_connection(target, **self.connection_kwargs),
                     self.connect_timeout, 'Connect timeout')
+
+            # TODO: implement TLS
+            # https://stackoverflow.com/questions/62851407/how-do-i-enable-tls-on-an-already-connected-python-asyncio-stream
+
+            # import ssl
+            # resp = await wait_for(self.reader.read(15), self.timeout,
+            #                       'Response TLS header read timeout')
+            # if resp == b'MDCSTART<<TLS>>':
+            #     transport = self.writer.transport
+            #     protocol = transport.get_protocol()
+            #     loop = asyncio.get_event_loop()
+            #     ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+            #     ssl_ctx.minimum_version = ssl.TLSVersion.MINIMUM_SUPPORTED
+            #     ssl_ctx.check_hostname = False
+            #     ssl_ctx.verify_mode = ssl.VerifyMode.CERT_NONE
+            #     ssl_ctx.verify_mode = ssl.VerifyMode.CERT_REQUIRED
+            #     ssl_ctx.load_cert_chain('example.cer', 'example.key')
+            #     # ssl_ctx.load_verify_locations('example.cer')
+            #     ssl_transport = await loop.start_tls(
+            #         transport, protocol, ssl_ctx)
+            #     self.writer._transport = ssl_transport
+            #     self.reader._transport = ssl_transport
         else:
             # Make this package optional
             from serial_asyncio import open_serial_connection
@@ -75,22 +97,21 @@ class MDCConnection:
     def is_opened(self):
         return self.writer is not None
 
-    async def send(self, cmd: Union[int, Tuple[int, int]], id: int,
+    async def send(self, cmd: Union[int, Tuple[int], Tuple[int, int]], id: int,
                    data: Union[bytes, Sequence] = b''):
-        subcmd = None
-        if isinstance(cmd, Tuple):
-            assert len(cmd) == 2
-            cmd, subcmd = cmd
-        if subcmd is not None:
-            data = bytes([subcmd]) + bytes(data)
-
-        payload = bytes((HEADER_CODE, cmd, id, len(data))) + bytes(data)
+        if isinstance(cmd, int):
+            cmd = (cmd,)
+        payload = (
+            bytes((HEADER_CODE, cmd[0], id, len(cmd[1:]) + len(data)))
+            + bytes(cmd[1:]) + bytes(data))
         checksum = sum(payload[1:]) % 256
         payload += bytes((checksum,))
 
         if not self.is_opened:
             await self.open()
 
+        if self.reader._buffer:
+            print(self.reader._buffer)
         self.writer.write(payload)
         await wait_for(self.writer.drain(), self.timeout, 'Write timeout')
         if self.verbose:
@@ -101,11 +122,17 @@ class MDCConnection:
         if not resp:
             raise MDCResponseError('Empty response', resp)
         if resp[0] != HEADER_CODE:
-            raise MDCResponseError('Unexpected header', resp)
+            if (resp + self.reader._buffer) == b'MDCSTART<<TLS>>':
+                raise MDCTLSRequired(resp + self.reader._buffer)
+            raise MDCResponseError('Unexpected header',
+                                   resp + self.reader._buffer)
         if resp[1] != RESPONSE_CMD:
-            raise MDCResponseError('Unexpected cmd', resp)
+            resp += self.reader._buffer
+            raise MDCResponseError('Unexpected cmd',
+                                   resp + self.reader._buffer)
         if resp[2] != id:
-            raise MDCResponseError('Unexpected id', resp)
+            resp += self.reader._buffer
+            raise MDCResponseError('Unexpected id', resp + self.reader._buffer)
         resp += await wait_for(self.reader.read(resp[3] + 1), self.timeout,
                                'Response data read timeout')
         if self.verbose:
@@ -120,7 +147,7 @@ class MDCConnection:
             raise MDCResponseError('Unexpected ACK/NAK', resp)
 
         return (ack == ACK_CODE, rcmd,
-                data[1:] if (ack == ACK_CODE and subcmd is not None) else data)
+                data[1:] if (ack == ACK_CODE and len(cmd) == 2) else data)
 
     async def close(self):
         writer = self.writer

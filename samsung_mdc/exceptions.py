@@ -5,6 +5,10 @@ class MDCError(Exception):
     pass
 
 
+class MDCTLSRequired(Exception):
+    pass
+
+
 class MDCTimeoutError(MDCError, TimeoutError):
     pass
 

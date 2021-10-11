@@ -6,7 +6,7 @@ It allows you to control a variety of different sources (TV, Monitor) through th
 
 [MDC Protocol specification - v15.0 2020-11-06](https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf)
 
-* Implemented *58* commands
+* Implemented *60* commands
 * Easy to extend using simple declarative API - see [samsung_mdc/commmands.py](https://github.com/vgavro/samsung-mdc/blob/master/samsung_mdc/commands.py)
 * Detailed [CLI](#usage) help and parameters validation
 * Run commands async on numerous targets (using asyncio)
@@ -95,7 +95,7 @@ Options:
 * [screen_mode](#screen_mode) `[SCREEN_MODE_STATE]`
 * [screen_size](#screen_size) `(INCHES)`
 * [magicinfo_server](#magicinfo_server) `[MAGICINFO_SERVER_URL]`
-* [mdc_connection](#mdc_connection) `(MDC_CONNECTION_TYPE)`
+* [mdc_connection](#mdc_connection) `[MDC_CONNECTION_TYPE]`
 * [contrast](#contrast) `[CONTRAST]`
 * [brightness](#brightness) `[BRIGHTNESS]`
 * [sharpness](#sharpness) `[SHARPNESS]`
@@ -137,6 +137,8 @@ Options:
 * [clock_s](#clock_s) `[DATETIME]`
 * [launcher_play_via](#launcher_play_via) `[PLAY_VIA_MODE]`
 * [launcher_url_address](#launcher_url_address) `[URL_ADDRESS]`
+* [auto_source_switch](#auto_source_switch) `[AUTO_SOURCE_SWITCH_STATE]`
+* [auto_source](#auto_source) `[PRIMARY_SOURCE_RECOVERY PRIMARY_SOURCE SECONDARY_SOURCE]`
 * [panel](#panel) `[PANEL_STATE]`
 * [script](#script) `[OPTIONS] SCRIPT_FILE`
 
@@ -148,8 +150,8 @@ Data:
   POWER_STATE           OFF | ON | REBOOT
   VOLUME                int (0-100)
   MUTE_STATE            OFF | ON
-  INPUT_SOURCE_STATE    S_VIDEO | COMPONENT | AV | AV2 | SCART1 | DVI | PC |
-                        BNC | DVI_VIDEO | MAGIC_INFO | HDMI1 | HDMI1_PC |
+  INPUT_SOURCE_STATE    NONE | S_VIDEO | COMPONENT | AV | AV2 | SCART1 | DVI |
+                        PC | BNC | DVI_VIDEO | MAGIC_INFO | HDMI1 | HDMI1_PC |
                         HDMI2 | HDMI2_PC | DISPLAY_PORT_1 | DISPLAY_PORT_2 |
                         DISPLAY_PORT_3 | RF_TV | HDMI3 | HDMI3_PC | HDMI4 |
                         HDMI4_PC | TV_DTV | PLUG_IN_MODE | HD_BASE_T |
@@ -243,9 +245,9 @@ Data:
 Usage: samsung-mdc [OPTIONS] TARGET input_source [INPUT_SOURCE_STATE]
 
 Data:
-  INPUT_SOURCE_STATE  S_VIDEO | COMPONENT | AV | AV2 | SCART1 | DVI | PC | BNC
-                      | DVI_VIDEO | MAGIC_INFO | HDMI1 | HDMI1_PC | HDMI2 |
-                      HDMI2_PC | DISPLAY_PORT_1 | DISPLAY_PORT_2 |
+  INPUT_SOURCE_STATE  NONE | S_VIDEO | COMPONENT | AV | AV2 | SCART1 | DVI |
+                      PC | BNC | DVI_VIDEO | MAGIC_INFO | HDMI1 | HDMI1_PC |
+                      HDMI2 | HDMI2_PC | DISPLAY_PORT_1 | DISPLAY_PORT_2 |
                       DISPLAY_PORT_3 | RF_TV | HDMI3 | HDMI3_PC | HDMI4 |
                       HDMI4_PC | TV_DTV | PLUG_IN_MODE | HD_BASE_T |
                       MEDIA_MAGIC_INFO_S | WIDI_SCREEN_MIRRORING |
@@ -290,7 +292,10 @@ Data:
 ```
 #### mdc_connection<a id="mdc_connection"></a>
 ```
-Usage: samsung-mdc [OPTIONS] TARGET mdc_connection
+Usage: samsung-mdc [OPTIONS] TARGET mdc_connection [MDC_CONNECTION_TYPE]
+
+  Note: Depends on the product specification, if it is set as RJ45 then
+  serial MDC will not work.
 
 Data:
   MDC_CONNECTION_TYPE  RS232C | RJ45
@@ -496,6 +501,8 @@ Data:
 ```
 Usage: samsung-mdc [OPTIONS] TARGET osd [OSD_ENABLED]
 
+  Turns OSD (On-screen display) on/off.
+
 Data:
   OSD_ENABLED  bool
 ```
@@ -535,6 +542,8 @@ Data:
 ```
 Usage: samsung-mdc [OPTIONS] TARGET osd_type [OSD_TYPE OSD_ENABLED]
 
+  Turns OSD (On-screen display) specific message types on/off.
+
 Data:
   OSD_TYPE     SOURCE | NOT_OPTIMUM_MODE | NO_SIGNAL | MDC | SCHEDULE_CHANNEL
   OSD_ENABLED  bool
@@ -556,9 +565,9 @@ Data:
   OFF_TIME            time (format: %H:%M:%S)
   OFF_ENABLED         bool
   VOLUME              int (0-100)
-  INPUT_SOURCE_STATE  S_VIDEO | COMPONENT | AV | AV2 | SCART1 | DVI | PC | BNC
-                      | DVI_VIDEO | MAGIC_INFO | HDMI1 | HDMI1_PC | HDMI2 |
-                      HDMI2_PC | DISPLAY_PORT_1 | DISPLAY_PORT_2 |
+  INPUT_SOURCE_STATE  NONE | S_VIDEO | COMPONENT | AV | AV2 | SCART1 | DVI |
+                      PC | BNC | DVI_VIDEO | MAGIC_INFO | HDMI1 | HDMI1_PC |
+                      HDMI2 | HDMI2_PC | DISPLAY_PORT_1 | DISPLAY_PORT_2 |
                       DISPLAY_PORT_3 | RF_TV | HDMI3 | HDMI3_PC | HDMI4 |
                       HDMI4_PC | TV_DTV | PLUG_IN_MODE | HD_BASE_T |
                       MEDIA_MAGIC_INFO_S | WIDI_SCREEN_MIRRORING |
@@ -605,9 +614,9 @@ Data:
 
   OFF_MANUAL_WEEKDAY  list(,) SUN | MON | TUE | WED | THU | FRI | SAT
   VOLUME              int (0-100)
-  INPUT_SOURCE_STATE  S_VIDEO | COMPONENT | AV | AV2 | SCART1 | DVI | PC | BNC
-                      | DVI_VIDEO | MAGIC_INFO | HDMI1 | HDMI1_PC | HDMI2 |
-                      HDMI2_PC | DISPLAY_PORT_1 | DISPLAY_PORT_2 |
+  INPUT_SOURCE_STATE  NONE | S_VIDEO | COMPONENT | AV | AV2 | SCART1 | DVI |
+                      PC | BNC | DVI_VIDEO | MAGIC_INFO | HDMI1 | HDMI1_PC |
+                      HDMI2 | HDMI2_PC | DISPLAY_PORT_1 | DISPLAY_PORT_2 |
                       DISPLAY_PORT_3 | RF_TV | HDMI3 | HDMI3_PC | HDMI4 |
                       HDMI4_PC | TV_DTV | PLUG_IN_MODE | HD_BASE_T |
                       MEDIA_MAGIC_INFO_S | WIDI_SCREEN_MIRRORING |
@@ -724,6 +733,40 @@ Usage: samsung-mdc [OPTIONS] TARGET launcher_url_address [URL_ADDRESS]
 
 Data:
   URL_ADDRESS  str
+```
+#### auto_source_switch<a id="auto_source_switch"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET auto_source_switch
+                   [AUTO_SOURCE_SWITCH_STATE]
+
+Data:
+  AUTO_SOURCE_SWITCH_STATE  OFF | ON
+```
+#### auto_source<a id="auto_source"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET auto_source [PRIMARY_SOURCE_RECOVERY
+                   PRIMARY_SOURCE SECONDARY_SOURCE]
+
+Data:
+  PRIMARY_SOURCE_RECOVERY  OFF | ON
+  PRIMARY_SOURCE           NONE | S_VIDEO | COMPONENT | AV | AV2 | SCART1 |
+                           DVI | PC | BNC | DVI_VIDEO | MAGIC_INFO | HDMI1 |
+                           HDMI1_PC | HDMI2 | HDMI2_PC | DISPLAY_PORT_1 |
+                           DISPLAY_PORT_2 | DISPLAY_PORT_3 | RF_TV | HDMI3 |
+                           HDMI3_PC | HDMI4 | HDMI4_PC | TV_DTV | PLUG_IN_MODE
+                           | HD_BASE_T | MEDIA_MAGIC_INFO_S |
+                           WIDI_SCREEN_MIRRORING | INTERNAL_USB | URL_LAUNCHER
+                           | IWB
+
+  SECONDARY_SOURCE         NONE | S_VIDEO | COMPONENT | AV | AV2 | SCART1 |
+                           DVI | PC | BNC | DVI_VIDEO | MAGIC_INFO | HDMI1 |
+                           HDMI1_PC | HDMI2 | HDMI2_PC | DISPLAY_PORT_1 |
+                           DISPLAY_PORT_2 | DISPLAY_PORT_3 | RF_TV | HDMI3 |
+                           HDMI3_PC | HDMI4 | HDMI4_PC | TV_DTV | PLUG_IN_MODE
+                           | HD_BASE_T | MEDIA_MAGIC_INFO_S |
+                           WIDI_SCREEN_MIRRORING | INTERNAL_USB | URL_LAUNCHER
+                           | IWB
+
 ```
 #### panel<a id="panel"></a>
 ```

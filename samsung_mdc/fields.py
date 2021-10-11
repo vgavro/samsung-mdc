@@ -38,7 +38,7 @@ class Bool(Int):
     range = range(2)
 
     def parse(self, data):
-        return bool(data)
+        return bool(data[0])
 
 
 class Enum(Field):

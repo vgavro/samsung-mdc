@@ -73,6 +73,9 @@ class INPUT_SOURCE(Command):
     GET, SET = True, True
 
     class INPUT_SOURCE_STATE(Enum):
+        # not a valid value for INPUT_SOURCE, but valid for auto_source
+        NONE = 0x00
+
         S_VIDEO = 0x04
         COMPONENT = 0x08
         AV = 0x0C
@@ -166,11 +169,12 @@ class MAGICINFO_SERVER(Command):
 
 
 class MDC_CONNECTION(Command):
+    """
+    Note: Depends on the product specification,
+    if it is set as RJ45 then serial MDC will not work.
+    """
     CMD = 0x1D
-    GET, SET = True, False
-    # NOTE: There is no Set command in documentation,
-    # but comment states that this parameter is readonly
-    # only for RJ45 connection...
+    GET, SET = True, True
 
     class MDC_CONNECTION_TYPE(Enum):
         RS232C = 0x00
@@ -432,6 +436,9 @@ class DEVICE_NAME(Command):
 
 
 class OSD(Command):
+    """
+    Turns OSD (On-screen display) on/off.
+    """
     CMD = 0x70
     GET, SET = True, True
 
@@ -491,6 +498,9 @@ class RESET(Command):
 
 
 class OSD_TYPE(Command):
+    """
+    Turns OSD (On-screen display) specific message types on/off.
+    """
     CMD = 0xA3
     GET, SET = True, True
 
@@ -787,6 +797,34 @@ class DISPLAY_ID(Command):
         ON = 0x01
 
     DATA = [DISPLAY_ID_STATE]
+
+
+class AUTO_SOURCE_SWITCH(Command):
+    CMD = 0xCA
+    SUBCMD = 0x81
+    GET, SET = True, True
+
+    class AUTO_SOURCE_SWITCH_STATE(Enum):
+        OFF = 0x00
+        ON = 0x01
+
+    DATA = [AUTO_SOURCE_SWITCH_STATE]
+
+
+class AUTO_SOURCE(Command):
+    CMD = 0xCA
+    SUBCMD = 0x82
+    GET, SET = True, True
+
+    class PRIMARY_SOURCE_RECOVERY(Enum):
+        OFF = 0x00
+        ON = 0x01
+
+    DATA = [
+        PRIMARY_SOURCE_RECOVERY,
+        EnumField(INPUT_SOURCE.INPUT_SOURCE_STATE, 'PRIMARY_SOURCE'),
+        EnumField(INPUT_SOURCE.INPUT_SOURCE_STATE, 'SECONDARY_SOURCE')
+    ]
 
 
 class LAUNCHER_PLAY_VIA(Command):
