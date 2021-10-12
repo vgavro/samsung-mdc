@@ -43,3 +43,12 @@ def parse_mdc_time(day_part, hour, minute, second=0):
 def pack_mdc_time(time):
     time = time.strftime('%p %I %M %S').split()
     return int(time[0] == 'AM'), int(time[1]), int(time[2]), int(time[3])
+
+
+def repr_hex(value):
+    # return ' '.join(f'{x:02x}/{x}' for x in value)
+    return ':'.join(f'{x:02x}' for x in value)
+
+
+def parse_hex(value):
+    return value and bytes(int(x, 16) for x in value.split(':')) or b''

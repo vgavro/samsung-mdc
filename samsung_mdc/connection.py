@@ -4,17 +4,13 @@ from enum import Enum
 import asyncio
 
 from .exceptions import MDCResponseError, MDCTimeoutError, MDCTLSRequired
+from .utils import repr_hex
 
 
 HEADER_CODE = 0xAA
 RESPONSE_CMD = 0xFF
 ACK_CODE = ord('A')  # 0x41 65
 NAK_CODE = ord('N')  # 0x4E 78
-
-
-def _repr_hex(value):
-    # return ' '.join(f'{x:02x}:{x}' for x in value)
-    return ' '.join(f'{x:02x}' for x in value)
 
 
 async def wait_for(aw, timeout, reason):
@@ -115,7 +111,7 @@ class MDCConnection:
         self.writer.write(payload)
         await wait_for(self.writer.drain(), self.timeout, 'Write timeout')
         if self.verbose:
-            self.verbose('Sent', _repr_hex(payload))
+            self.verbose('Sent', repr_hex(payload))
 
         resp = await wait_for(self.reader.read(4), self.timeout,
                               'Response header read timeout')
@@ -136,7 +132,7 @@ class MDCConnection:
         resp += await wait_for(self.reader.read(resp[3] + 1), self.timeout,
                                'Response data read timeout')
         if self.verbose:
-            self.verbose('Recv', _repr_hex(resp))
+            self.verbose('Recv', repr_hex(resp))
 
         checksum = sum(resp[1:-1]) % 256
         if checksum != int(resp[-1]):
@@ -146,8 +142,11 @@ class MDCConnection:
         if ack not in (ACK_CODE, NAK_CODE):
             raise MDCResponseError('Unexpected ACK/NAK', resp)
 
-        return (ack == ACK_CODE, rcmd,
-                data[1:] if (ack == ACK_CODE and len(cmd) == 2) else data)
+        return (
+            ack == ACK_CODE,
+            (rcmd, data[0]) if (ack == ACK_CODE and len(cmd) > 1) else (rcmd,),
+            data[1:] if (ack == ACK_CODE and len(cmd) > 1) else data
+        )
 
     async def close(self):
         writer = self.writer

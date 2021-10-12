@@ -15,6 +15,7 @@ import platform
 import click
 
 from . import MDC, fields
+from .utils import parse_hex, repr_hex
 
 
 def _parse_int(x):
@@ -459,6 +460,18 @@ def cli(ctx, target, verbose, mode, **kwargs):
     ctx.obj['verbose'] = verbose
 
 
+def asyncio_run(call, targets):
+    if platform.system() == 'Windows':
+        asyncio.set_event_loop_policy(
+            asyncio.WindowsSelectorEventLoopPolicy())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(asyncio.wait([
+        loop.create_task(call(*target))
+        for target in targets
+    ]))
+    loop.close()
+
+
 def register_command(command):
     @click.pass_context
     def _cmd(ctx, **kwargs):
@@ -473,15 +486,7 @@ def register_command(command):
                 if ctx.obj['verbose']:
                     raise
 
-        if platform.system() == 'Windows':
-            asyncio.set_event_loop_policy(
-                asyncio.WindowsSelectorEventLoopPolicy())
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(asyncio.wait([
-            loop.create_task(call(*target))
-            for target in ctx.obj['targets']
-        ]))
-        loop.close()
+        asyncio_run(call, ctx.obj['targets'])
 
         if failed_targets:
             if len(ctx.obj['targets']) > 1:
@@ -640,17 +645,45 @@ def script(ctx, script_file, sleep, retry_command, retry_command_sleep,
             if ctx.obj['verbose']:
                 raise last_exc
 
-    if platform.system() == 'Windows':
-        asyncio.set_event_loop_policy(
-            asyncio.WindowsSelectorEventLoopPolicy())
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(asyncio.wait([
-        loop.create_task(call(*target))
-        for target in ctx.obj['targets']
-    ]))
-    loop.close()
+    asyncio_run(call, ctx.obj['targets'])
 
-    # sleep(0)
+    if failed_targets:
+        if len(ctx.obj['targets']) > 1:
+            print('Failed targets:', len(failed_targets))
+        ctx.exit(1)
+
+
+@cli.command(help='Helper command to send raw data for test purposes.',
+             cls=FixedSubcommand)
+@click.argument(
+    'command', type=str, cls=ArgumentWithHelp,
+    help='Command and (optionally) subcommand (example: a1 or a1:b2)')
+@click.argument(
+    'data', type=str, default='', cls=ArgumentWithHelp,
+    help='Data payload if any (example: a1:b2)')
+@click.pass_context
+def raw(ctx, command, data):
+    failed_targets = []
+
+    async def call(connection, display_id):
+        try:
+            ack, rcmd, resp_data = await connection.send(
+                tuple(parse_hex(command)), display_id,
+                parse_hex(data))
+            print(
+                f'{display_id}@{connection.target}',
+                'A' if ack else 'N', repr_hex(rcmd), repr_hex(resp_data)
+            )
+
+        except Exception as exc:
+            print(f'{display_id}@{connection.target}',
+                  f'{exc.__class__.__name__}: {exc}')
+            failed_targets.append((connection, display_id, exc))
+            if ctx.obj['verbose']:
+                raise
+
+    asyncio_run(call, ctx.obj['targets'])
+
     if failed_targets:
         if len(ctx.obj['targets']) > 1:
             print('Failed targets:', len(failed_targets))

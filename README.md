@@ -6,7 +6,7 @@ It allows you to control a variety of different sources (TV, Monitor) through th
 
 [MDC Protocol specification - v15.0 2020-11-06](https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf)
 
-* Implemented *60* commands
+* Implemented *61* commands
 * Easy to extend using simple declarative API - see [samsung_mdc/commmands.py](https://github.com/vgavro/samsung-mdc/blob/master/samsung_mdc/commands.py)
 * Detailed [CLI](#usage) help and parameters validation
 * Run commands async on numerous targets (using asyncio)
@@ -141,6 +141,7 @@ Options:
 * [auto_source](#auto_source) `[PRIMARY_SOURCE_RECOVERY PRIMARY_SOURCE SECONDARY_SOURCE]`
 * [panel](#panel) `[PANEL_STATE]`
 * [script](#script) `[OPTIONS] SCRIPT_FILE`
+* [raw](#raw) `[OPTIONS] COMMAND [DATA]`
 
 #### status<a id="status"></a>
 ```
@@ -815,6 +816,16 @@ Options:
   -r, --retry-script INTEGER   Retry script if failed (count)
   --retry-script-sleep FLOAT   Sleep before script retry (seconds)
   --help                       Show this message and exit.
+```
+#### raw<a id="raw"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET raw [OPTIONS] COMMAND [DATA]
+
+  Helper command to send raw data for test purposes.
+
+Arguments:
+  command  Command and (optionally) subcommand (example: a1 or a1:b2)
+  data     Data payload if any (example: a1:b2)
 ```
 
 ## Python example<a id="python-example"></a>
