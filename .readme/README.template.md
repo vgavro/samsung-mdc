@@ -7,10 +7,11 @@ It allows you to control a variety of different sources (TV, Monitor) through th
 [MDC Protocol specification - v15.0 2020-11-06](https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf)
 
 * Implemented *{{command_count}}* commands
-* Easy to extend using simple declarative API - see [samsung_mdc/commmands.py](https://github.com/vgavro/samsung-mdc/blob/master/samsung_mdc/commands.py)
+* Easy to extend using simple declarative API - see [samsung_mdc/commands.py](https://github.com/vgavro/samsung-mdc/blob/master/samsung_mdc/commands.py)
 * Detailed [CLI](#usage) help and parameters validation
 * Run commands async on numerous targets (using asyncio)
 * TCP and SERIAL mode (for RJ45 and RS232C connection types)
+* TCP over TLS mode ("Secured Protocol" using PIN)
 * [script](#script) command for advanced usage
 * [Python example](#python-example)
 

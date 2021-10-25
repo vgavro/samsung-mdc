@@ -9,7 +9,25 @@ class MDCTLSRequired(Exception):
     pass
 
 
+class MDCTLSAuthFailed(Exception):
+    def __init__(self, code):
+        self.code = code
+        super().__init__(code)
+
+    def __str__(self):
+        if self.code == 1:
+            return 'Wrong pin'
+        elif self.code == 2:
+            return 'Blocked'
+        else:
+            return f'Unknown code: {self.code}'
+
+
 class MDCTimeoutError(MDCError, TimeoutError):
+    pass
+
+
+class MDCReadTimeoutError(MDCTimeoutError):
     pass
 
 

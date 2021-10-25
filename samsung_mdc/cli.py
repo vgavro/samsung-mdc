@@ -444,17 +444,21 @@ but you may want to use --mode option.
 @click.option('-m', '--mode', default='auto', help='default: auto',
               type=click.Choice(('auto', 'tcp', 'serial'),
                                 case_sensitive=False))
+@click.option('-p', '--pin', default=None, type=int,
+              help='4-digit PIN for secured TLS connection. '
+                   'If PIN provided, "Secured Protocol" must be enabled '
+                   'on remote device.')
 @click.option(
     '-t', '--timeout', default=5, type=float, help=(
         'read/write/connect timeout in seconds (default: 5) '
-        '(connect can be overrided with separate option)'))
+        '(connect can be overridden with separate option)'))
 @click.option('--connect-timeout', default=None, type=float)
 @click.pass_context
-def cli(ctx, target, verbose, mode, **kwargs):
+def cli(ctx, target, verbose, mode, pin, **kwargs):
     ctx.ensure_object(dict)
     ctx.obj['targets'] = [(
         MDC(target, auto_mode if mode == 'auto' else mode,
-            **{'verbose': verbose, **kwargs}),
+            **{'verbose': verbose, 'pin': pin, **kwargs}),
         display_id
     ) for auto_mode, target, display_id in target]
     ctx.obj['verbose'] = verbose
@@ -469,6 +473,15 @@ def asyncio_run(call, targets):
         loop.create_task(call(*target))
         for target in targets
     ]))
+
+    # Gracefully close connections
+    connections = [target[0] for target in targets if target[0].is_opened]
+    if connections:
+        loop.run_until_complete(asyncio.wait([
+            loop.create_task(connection.close())
+            for connection in connections
+        ]))
+
     loop.close()
 
 

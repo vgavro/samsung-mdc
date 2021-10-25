@@ -3,7 +3,8 @@ from functools import partial
 from enum import Enum
 import asyncio
 
-from .exceptions import MDCResponseError, MDCTimeoutError, MDCTLSRequired
+from .exceptions import MDCResponseError, MDCReadTimeoutError, \
+    MDCTimeoutError, MDCTLSRequired, MDCTLSAuthFailed
 from .utils import repr_hex
 
 
@@ -18,6 +19,13 @@ async def wait_for(aw, timeout, reason):
         return await asyncio.wait_for(aw, timeout)
     except asyncio.TimeoutError as exc:
         raise MDCTimeoutError(reason) from exc
+
+
+async def wait_for_read(reader, count, timeout, reason):
+    try:
+        return await asyncio.wait_for(reader.read(count), timeout)
+    except asyncio.TimeoutError as exc:
+        raise MDCReadTimeoutError(reason, bytes(reader._buffer)) from exc
 
 
 class CONNECTION_MODE(Enum):
@@ -41,6 +49,8 @@ class MDCConnection:
 
     async def open(self):
         if self.mode == CONNECTION_MODE.TCP:
+            pin = self.connection_kwargs.pop('pin', None)
+
             if isinstance(self.target, (list, tuple)):
                 # make target be compatible with socket.__init__
                 target, port = self.target
@@ -54,27 +64,13 @@ class MDCConnection:
                     asyncio.open_connection(target, **self.connection_kwargs),
                     self.connect_timeout, 'Connect timeout')
 
-            # TODO: implement TLS
-            # https://stackoverflow.com/questions/62851407/how-do-i-enable-tls-on-an-already-connected-python-asyncio-stream
+            if pin is not None:
+                try:
+                    await self.start_tls(pin)
+                except Exception:
+                    await self.close()
+                    raise
 
-            # import ssl
-            # resp = await wait_for(self.reader.read(15), self.timeout,
-            #                       'Response TLS header read timeout')
-            # if resp == b'MDCSTART<<TLS>>':
-            #     transport = self.writer.transport
-            #     protocol = transport.get_protocol()
-            #     loop = asyncio.get_event_loop()
-            #     ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-            #     ssl_ctx.minimum_version = ssl.TLSVersion.MINIMUM_SUPPORTED
-            #     ssl_ctx.check_hostname = False
-            #     ssl_ctx.verify_mode = ssl.VerifyMode.CERT_NONE
-            #     ssl_ctx.verify_mode = ssl.VerifyMode.CERT_REQUIRED
-            #     ssl_ctx.load_cert_chain('example.cer', 'example.key')
-            #     # ssl_ctx.load_verify_locations('example.cer')
-            #     ssl_transport = await loop.start_tls(
-            #         transport, protocol, ssl_ctx)
-            #     self.writer._transport = ssl_transport
-            #     self.reader._transport = ssl_transport
         else:
             # Make this package optional
             from serial_asyncio import open_serial_connection
@@ -89,9 +85,62 @@ class MDCConnection:
         if self.verbose:
             self.verbose('Connected')
 
+    async def start_tls(self, pin):
+        if isinstance(pin, int):
+            pin = str(pin).rjust(4, '0').encode()
+        elif isinstance(pin, str):
+            pin = pin.rjust(4, '0').encode()
+
+        if not self.is_opened:
+            await self.open()
+
+        import ssl
+        resp = await wait_for_read(self.reader, 15, self.timeout,
+                                   'TLS header read timeout')
+        if not resp == b'MDCSTART<<TLS>>':
+            raise MDCResponseError('Unexpected TLS header',
+                                   resp + self.reader._buffer)
+        transport = self.writer.transport
+        protocol = transport.get_protocol()
+        loop = asyncio.get_event_loop()
+        ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        ssl_ctx.minimum_version = ssl.TLSVersion.MINIMUM_SUPPORTED
+        ssl_ctx.check_hostname = False
+        ssl_ctx.verify_mode = ssl.VerifyMode.CERT_NONE
+        ssl_transport = await loop.start_tls(
+            transport, protocol, ssl_ctx)
+        self.writer._transport = ssl_transport
+        self.reader._transport = ssl_transport
+
+        self.writer.write(pin)
+        await wait_for(self.writer.drain(), self.timeout,
+                       'Write pin timeout')
+        resp = await wait_for_read(self.reader, 15, self.timeout,
+                                   'TLS auth read timeout')
+        if not resp == b'MDCAUTH<<PASS>>':
+            if resp[:14] == b'MDCAUTH<<FAIL:':
+                resp += await wait_for_read(self.reader, 5, self.timeout,
+                                            'TLS auth fail read timeout')
+                if resp[-2:] != b'>>':
+                    raise MDCResponseError('Unexpected TLS auth fail response',
+                                           resp + self.reader._buffer)
+                try:
+                    fail_code = int(resp[-6:-2], 16)
+                except ValueError:
+                    raise MDCResponseError('Unexpected TLS auth fail code',
+                                           resp + self.reader._buffer)
+                raise MDCTLSAuthFailed(fail_code)
+            raise MDCResponseError('Unexpected TLS auth response',
+                                   resp + self.reader._buffer)
+
     @property
     def is_opened(self):
         return self.writer is not None
+
+    @property
+    def is_tls_started(self):
+        return (self.writer and self.writer._transport.__class__.__name__ ==
+                '_SSLProtocolTransport')
 
     async def send(self, cmd: Union[int, Tuple[int], Tuple[int, int]], id: int,
                    data: Union[bytes, Sequence] = b''):
@@ -106,15 +155,13 @@ class MDCConnection:
         if not self.is_opened:
             await self.open()
 
-        if self.reader._buffer:
-            print(self.reader._buffer)
         self.writer.write(payload)
         await wait_for(self.writer.drain(), self.timeout, 'Write timeout')
         if self.verbose:
             self.verbose('Sent', repr_hex(payload))
 
-        resp = await wait_for(self.reader.read(4), self.timeout,
-                              'Response header read timeout')
+        resp = await wait_for_read(self.reader, 4, self.timeout,
+                                   'Response header read timeout')
         if not resp:
             raise MDCResponseError('Empty response', resp)
         if resp[0] != HEADER_CODE:
@@ -129,8 +176,8 @@ class MDCConnection:
         if resp[2] != id:
             resp += self.reader._buffer
             raise MDCResponseError('Unexpected id', resp + self.reader._buffer)
-        resp += await wait_for(self.reader.read(resp[3] + 1), self.timeout,
-                               'Response data read timeout')
+        resp += await wait_for_read(self.reader, resp[3] + 1, self.timeout,
+                                    'Response data read timeout')
         if self.verbose:
             self.verbose('Recv', repr_hex(resp))
 
@@ -149,10 +196,14 @@ class MDCConnection:
         )
 
     async def close(self):
+        if self.is_tls_started:
+            # FIX warning
+            # "returning true from eof_received() has no effect when using ssl"
+            self.writer._protocol.eof_received = lambda: None
         writer = self.writer
         self.reader, self.writer = None, None
         writer.close()
-        await writer.wait_closed()
+        await wait_for(writer.wait_closed(), self.timeout, 'Close timeout')
 
     async def __aenter__(self):
         if not self.is_opened:
