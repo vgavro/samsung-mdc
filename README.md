@@ -66,20 +66,19 @@ Usage: samsung-mdc [OPTIONS] TARGET COMMAND [ARGS]...
   DISPLAY_ID@PORT_NAME for Windows (example: 1@COM1)
   DISPLAY_ID@PORT_PATH (example: 1@/dev/ttyUSB0)
 
-  We're trying to make autodetection of connection mode by port name, but
-  you may want to use --mode option.
+  We're trying to make autodetection of connection mode by port name, but you
+  may want to use --mode option.
 
 Options:
+  --version                     Show the version and exit.
   -v, --verbose
   -m, --mode [auto|tcp|serial]  default: auto
   -p, --pin INTEGER             4-digit PIN for secured TLS connection. If PIN
                                 provided, "Secured Protocol" must be enabled
                                 on remote device.
-
   -t, --timeout FLOAT           read/write/connect timeout in seconds
                                 (default: 5) (connect can be overridden with
                                 separate option)
-
   --connect-timeout FLOAT
   -h, --help                    Show this message and exit.
 
@@ -163,14 +162,12 @@ Data:
                         HDMI4_PC | TV_DTV | PLUG_IN_MODE | HD_BASE_T |
                         MEDIA_MAGIC_INFO_S | WIDI_SCREEN_MIRRORING |
                         INTERNAL_USB | URL_LAUNCHER | IWB
-
   PICTURE_ASPECT_STATE  PC_16_9 | PC_4_3 | PC_ORIGINAL_RATIO | PC_21_9 |
                         VIDEO_AUTO_WIDE | VIDEO_16_9 | VIDEO_ZOOM |
                         VIDEO_ZOOM_1 | VIDEO_ZOOM_2 | VIDEO_SCREEN_FIT |
                         VIDEO_4_3 | VIDEO_WIDE_FIT | VIDEO_CUSTOM |
                         VIDEO_SMART_VIEW_1 | VIDEO_SMART_VIEW_2 |
                         VIDEO_WIDE_ZOOM | VIDEO_21_9
-
   N_TIME_NF             int
   F_TIME_NF             int
 ```
@@ -258,7 +255,6 @@ Data:
                       HDMI4_PC | TV_DTV | PLUG_IN_MODE | HD_BASE_T |
                       MEDIA_MAGIC_INFO_S | WIDI_SCREEN_MIRRORING |
                       INTERNAL_USB | URL_LAUNCHER | IWB
-
 ```
 #### picture_aspect<a id="picture_aspect"></a>
 ```
@@ -271,7 +267,6 @@ Data:
                         VIDEO_4_3 | VIDEO_WIDE_FIT | VIDEO_CUSTOM |
                         VIDEO_SMART_VIEW_1 | VIDEO_SMART_VIEW_2 |
                         VIDEO_WIDE_ZOOM | VIDEO_21_9
-
 ```
 #### screen_mode<a id="screen_mode"></a>
 ```
@@ -300,8 +295,8 @@ Data:
 ```
 Usage: samsung-mdc [OPTIONS] TARGET mdc_connection [MDC_CONNECTION_TYPE]
 
-  Note: Depends on the product specification, if it is set as RJ45 then
-  serial MDC will not work.
+  Note: Depends on the product specification, if it is set as RJ45 then serial
+  MDC will not work.
 
 Data:
   MDC_CONNECTION_TYPE  RS232C | RJ45
@@ -377,8 +372,8 @@ Usage: samsung-mdc [OPTIONS] TARGET ir_state [IR_STATE]
 
   Enables/disables IR (Infrared) receiving function (Remote Control).
 
-  Working Condition: * Can operate regardless of whether power is ON/OFF.
-  (If DPMS Situation in LFD, it operate Remocon regardless of set value).
+  Working Condition: * Can operate regardless of whether power is ON/OFF. (If
+  DPMS Situation in LFD, it operate Remocon regardless of set value).
 
 Data:
   IR_STATE  DISABLED | ENABLED
@@ -497,8 +492,8 @@ Data:
 ```
 Usage: samsung-mdc [OPTIONS] TARGET device_name
 
-  It reads the device name which user set up in network. Shows the
-  information about entered device name.
+  It reads the device name which user set up in network. Shows the information
+  about entered device name.
 
 Data:
   DEVICE_NAME  str
@@ -578,13 +573,10 @@ Data:
                       HDMI4_PC | TV_DTV | PLUG_IN_MODE | HD_BASE_T |
                       MEDIA_MAGIC_INFO_S | WIDI_SCREEN_MIRRORING |
                       INTERNAL_USB | URL_LAUNCHER | IWB
-
   HOLIDAY_APPLY       DONT_APPLY_BOTH | APPLY_BOTH | ON_TIMER_ONLY_APPLY |
                       OFF_TIMER_ONLY_APPLY
-
   REPEAT              ONCE | EVERYDAY | MON_FRI | MON_SAT | SAT_SUN |
                       MANUAL_WEEKDAY
-
   MANUAL_WEEKDAY      list(,) SUN | MON | TUE | WED | THU | FRI | SAT
 ```
 #### timer_15<a id="timer_15"></a>
@@ -599,8 +591,8 @@ Usage: samsung-mdc [OPTIONS] TARGET timer_15 TIMER_ID [ON_TIME ON_ENABLED
 
   ON_TIME/OFF_TIME - Turn ON/OFF display at specific time of day
 
-  ON_ACTIVE/OFF_ACTIVE - If timer is not active, values are ignored, so
-  there may be only OFF timer, ON timer, or both.
+  ON_ACTIVE/OFF_ACTIVE - If timer is not active, values are ignored, so there
+  may be only OFF timer, ON timer, or both.
 
   REPEAT - On which day timer is enabled (combined with HOLIDAY_APPLY and
   MANUAL_WEEKDAY)
@@ -613,11 +605,9 @@ Data:
   OFF_ENABLED         bool
   ON_REPEAT           ONCE | EVERYDAY | MON_FRI | MON_SAT | SAT_SUN |
                       MANUAL_WEEKDAY
-
   ON_MANUAL_WEEKDAY   list(,) SUN | MON | TUE | WED | THU | FRI | SAT
   OFF_REPEAT          ONCE | EVERYDAY | MON_FRI | MON_SAT | SAT_SUN |
                       MANUAL_WEEKDAY
-
   OFF_MANUAL_WEEKDAY  list(,) SUN | MON | TUE | WED | THU | FRI | SAT
   VOLUME              int (0-100)
   INPUT_SOURCE_STATE  NONE | S_VIDEO | COMPONENT | AV | AV2 | SCART1 | DVI |
@@ -627,10 +617,8 @@ Data:
                       HDMI4_PC | TV_DTV | PLUG_IN_MODE | HD_BASE_T |
                       MEDIA_MAGIC_INFO_S | WIDI_SCREEN_MIRRORING |
                       INTERNAL_USB | URL_LAUNCHER | IWB
-
   HOLIDAY_APPLY       DONT_APPLY_BOTH | APPLY_BOTH | ON_TIMER_ONLY_APPLY |
                       OFF_TIMER_ONLY_APPLY
-
 ```
 #### clock_m<a id="clock_m"></a>
 ```
@@ -638,13 +626,12 @@ Usage: samsung-mdc [OPTIONS] TARGET clock_m [DATETIME]
 
   Current time function (minute precision).
 
-  Note: This is for models developed until 2013. For newer models see
-  CLOCK_S function (seconds precision).
+  Note: This is for models developed until 2013. For newer models see CLOCK_S
+  function (seconds precision).
 
 Data:
   DATETIME  datetime (format: %Y-%m-%dT%H:%M:%S / %Y-%m-%d %H:%M:%S /
             %Y-%m-%dT%H:%M / %Y-%m-%d %H:%M)
-
 ```
 #### virtual_remote<a id="virtual_remote"></a>
 ```
@@ -665,7 +652,6 @@ Data:
             KEY_CURSOR_UP | KEY_CURSOR_DOWN | KEY_CURSOR_RIGHT |
             KEY_CURSOR_LEFT | KEY_ENTER | KEY_RED | KEY_LOCK | KEY_CONTENT |
             DISCRET_POWER_OFF | KEY_3D
-
 ```
 #### network_standby<a id="network_standby"></a>
 ```
@@ -684,14 +670,12 @@ Data:
   DST_STATE          OFF | AUTO | MANUAL
   START_MONTH        JAN | FEB | MAR | APR | MAY | JUN | JUL | AUG | SEP | OCT
                      | NOV | DEC
-
   START_WEEK         WEEK_1 | WEEK_2 | WEEK_3 | WEEK_4 | WEEK_LAST
   START_DAY_OF_WEEK  SUN | MON | TUE | WED | THU | FRI | SAT
   START_HOUR         int (0-23)
   START_MINUTE       int (0-59)
   END_MONTH          JAN | FEB | MAR | APR | MAY | JUN | JUL | AUG | SEP | OCT
                      | NOV | DEC
-
   END_WEEK           WEEK_1 | WEEK_2 | WEEK_3 | WEEK_4 | WEEK_LAST
   END_DAY_OF_WEEK    SUN | MON | TUE | WED | THU | FRI | SAT
   END_HOUR           int (0-23)
@@ -718,13 +702,12 @@ Usage: samsung-mdc [OPTIONS] TARGET clock_s [DATETIME]
 
   Current time function (second precision).
 
-  Note: This is for models developed after 2013. For older models see
-  CLOCK_M function (minute precision).
+  Note: This is for models developed after 2013. For older models see CLOCK_M
+  function (minute precision).
 
 Data:
   DATETIME  datetime (format: %Y-%m-%dT%H:%M:%S / %Y-%m-%d %H:%M:%S /
             %Y-%m-%dT%H:%M / %Y-%m-%d %H:%M)
-
 ```
 #### launcher_play_via<a id="launcher_play_via"></a>
 ```
@@ -763,7 +746,6 @@ Data:
                            | HD_BASE_T | MEDIA_MAGIC_INFO_S |
                            WIDI_SCREEN_MIRRORING | INTERNAL_USB | URL_LAUNCHER
                            | IWB
-
   SECONDARY_SOURCE         NONE | S_VIDEO | COMPONENT | AV | AV2 | SCART1 |
                            DVI | PC | BNC | DVI_VIDEO | MAGIC_INFO | HDMI1 |
                            HDMI1_PC | HDMI2 | HDMI2_PC | DISPLAY_PORT_1 |
@@ -772,7 +754,6 @@ Data:
                            | HD_BASE_T | MEDIA_MAGIC_INFO_S |
                            WIDI_SCREEN_MIRRORING | INTERNAL_USB | URL_LAUNCHER
                            | IWB
-
 ```
 #### panel<a id="panel"></a>
 ```
@@ -788,8 +769,8 @@ Usage: samsung-mdc [OPTIONS] TARGET script [OPTIONS] SCRIPT_FILE
   Script file with commands to execute.
 
   Commands for multiple targets will be running async, but commands order is
-  preserved for device (and is running on same connection), exit on first
-  fail unless retry options provided.
+  preserved for device (and is running on same connection), exit on first fail
+  unless retry options provided.
 
   It's highly recommended to use sleep option for virtual_remote!
 
