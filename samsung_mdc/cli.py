@@ -14,7 +14,7 @@ import platform
 
 import click
 
-from . import MDC, fields
+from . import MDC, fields, __version__
 from .utils import parse_hex, repr_hex
 
 
@@ -438,6 +438,7 @@ but you may want to use --mode option.
 
 
 @click.group(cls=Group, help=MAIN_HELP)
+@click.version_option(version=__version__)
 @click.argument('target', metavar='TARGET',
                 type=MDCTargetParamType())
 @click.option('-v', '--verbose', is_flag=True, default=False, type=bool)

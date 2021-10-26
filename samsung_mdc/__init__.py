@@ -1,5 +1,6 @@
 import inspect
 
+from .version import __version__  # noqa
 from .connection import MDCConnection
 from .command import Command
 from . import commands

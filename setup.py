@@ -1,5 +1,7 @@
 from setuptools import setup, find_packages
 
+exec(open('samsung_mdc/version.py').read())
+
 requires = [
     'click',
     'pyserial-asyncio'
@@ -7,7 +9,7 @@ requires = [
 
 setup(
     name='python-samsung-mdc',
-    version='1.4.0',
+    version=__version__,  # noqa
     description=('Samsung Multiple Display Control (MDC) '
                  'protocol implementation (asyncio library + CLI interface)'),
     long_description=open('README.md').read(),
