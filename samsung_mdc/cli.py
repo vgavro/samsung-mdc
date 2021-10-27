@@ -256,9 +256,12 @@ class MDCClickCommand(FixedSubcommand):
             ]
             type = click.DateTime(formats)
             help = f'datetime (format: {" / ".join(formats)})'
-        elif isinstance(field, fields.Time):
+        elif isinstance(field, (fields.Time, fields.Time12H)):
             type = Time()
             help = 'time (format: %H:%M:%S)'
+        elif isinstance(field, fields.IPAddress):
+            type = str
+            help = 'IP address'
         else:
             type = {
                 fields.Str: str,

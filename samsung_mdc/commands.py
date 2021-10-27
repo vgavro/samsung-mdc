@@ -1,7 +1,8 @@
 from enum import Enum
 
 from .command import Command
-from .fields import Enum as EnumField, Int, Bool, Str, Time, DateTime, Bitmask
+from .fields import (Enum as EnumField, Int, Bool, Str, Time12H, Time,
+                     DateTime, Bitmask, IPAddress)
 from .utils import parse_enum_bitmask
 
 
@@ -155,6 +156,49 @@ class SCREEN_SIZE(Command):
     GET, SET = True, False
 
     DATA = [Int('INCHES', range(256))]
+
+
+class NETWORK_CONFIGURATION(Command):
+    CMD = 0x1B
+    SUBCMD = 0x82
+    GET, SET = True, True
+
+    DATA = [
+        IPAddress('IP_ADDRESS'),
+        IPAddress('SUBNET_MASK'),
+        IPAddress('GATEWAY_ADDRESS'),
+        IPAddress('DNS_SERVER_ADDRESS'),
+    ]
+
+
+class NETWORK_MODE(Command):
+    CMD = 0x1B
+    SUBCMD = 0x85
+    GET, SET = True, True
+
+    class NETWORK_MODE_STATE(Enum):
+        DYNAMIC = 0x00
+        STATIC = 0x01
+
+    DATA = [NETWORK_MODE_STATE]
+
+
+class WEEKLY_RESTART(Command):
+    CMD = 0x1B
+    SUBCMD = 0xA2
+    GET, SET = True, True
+
+    class WEEKDAY(Enum):
+        # NOTE: codes differs from TIMER_15.WEEKDAY
+        SUN = 0x00
+        SAT = 0x01
+        FRI = 0x02
+        THU = 0x03
+        WED = 0x04
+        TUE = 0x05
+        MON = 0x06
+
+    DATA = [Bitmask(WEEKDAY), Time()]
 
 
 class MAGICINFO_SERVER(Command):
@@ -351,9 +395,9 @@ class AUTO_LAMP(Command):
     GET, SET = True, True
 
     DATA = [
-        Time('MAX_TIME'),
+        Time12H('MAX_TIME'),
         Int('MAX_LAMP_VALUE', range(101)),
-        Time('MIN_TIME'),
+        Time12H('MIN_TIME'),
         Int('MIN_LAMP_VALUE', range(101)),
     ]
 
@@ -545,13 +589,13 @@ class TIMER_15(Command):
         MANUAL_WEEKDAY = 0x05
 
     class WEEKDAY(Enum):
-        SUN = 0
-        MON = 1
-        TUE = 2
-        WED = 3
-        THU = 4
-        FRI = 5
-        SAT = 6
+        SUN = 0x00
+        MON = 0x01
+        TUE = 0x02
+        WED = 0x03
+        THU = 0x04
+        FRI = 0x05
+        SAT = 0x06
         # ignore_bit_7 = 7
 
     class HOLIDAY_APPLY(Enum):
@@ -561,10 +605,10 @@ class TIMER_15(Command):
         OFF_TIMER_ONLY_APPLY = 0x03
 
     DATA = [
-        Time('ON_TIME'),
+        Time12H('ON_TIME'),
         Bool('ON_ENABLED'),
 
-        Time('OFF_TIME'),
+        Time12H('OFF_TIME'),
         Bool('OFF_ENABLED'),
 
         EnumField(TIMER_REPEAT, 'ON_REPEAT'),
@@ -746,7 +790,8 @@ class DST(Command):
         WEEK_4 = 0x03
         WEEK_LAST = 0x04
 
-    class DAY_OF_WEEK(Enum):
+    class WEEKDAY(Enum):
+        # NOTE: same as TIMER_15.WEEKDAY
         SUN = 0x00
         MON = 0x01
         TUE = 0x02
@@ -763,14 +808,12 @@ class DST(Command):
         DST_STATE,
         EnumField(MONTH, 'START_MONTH'),
         EnumField(WEEK, 'START_WEEK'),
-        EnumField(DAY_OF_WEEK, 'START_DAY_OF_WEEK'),
-        Int('START_HOUR', range(24)),
-        Int('START_MINUTE', range(60)),
+        EnumField(WEEKDAY, 'START_WEEKDAY'),
+        Time('START_TIME'),
         EnumField(MONTH, 'END_MONTH'),
         EnumField(WEEK, 'END_WEEK'),
-        EnumField(DAY_OF_WEEK, 'END_DAY_OF_WEEK'),
-        Int('END_HOUR', range(24)),
-        Int('END_MINUTE', range(60)),
+        EnumField(WEEKDAY, 'END_WEEKDAY'),
+        Time('END_TIME'),
         OFFSET,
     ]
 

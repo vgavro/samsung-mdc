@@ -1,5 +1,5 @@
 from typing import Sequence
-from datetime import datetime
+from datetime import datetime, time
 
 from .utils import (
     parse_mdc_time, pack_mdc_time, parse_enum_bitmask, pack_bitmask)
@@ -73,7 +73,7 @@ class Str(Field):
         return value.encode('utf8')
 
 
-class Time(Field):
+class Time12H(Field):
     parse_len = 3
 
     def parse(self, data):
@@ -82,6 +82,16 @@ class Time(Field):
     def pack(self, data):
         day_part, hour, minute, second = pack_mdc_time(data)
         return (hour, minute, day_part)
+
+
+class Time(Field):
+    parse_len = 2
+
+    def parse(self, data):
+        return time(data[0], data[1])
+
+    def pack(self, data):
+        return (data.hour, data.minute)
 
 
 class DateTime(Field):
@@ -128,3 +138,16 @@ class Bitmask(Enum):
         if not isinstance(data, Sequence):
             raise ValueError('Bitmask values must be sequence')
         return [pack_bitmask(data)]
+
+
+class IPAddress(Field):
+    parse_len = 4
+
+    def parse(self, data):
+        return '.'.join(str(int(x)) for x in data)
+
+    def pack(self, data):
+        rv = tuple(int(x) for x in data.split('.'))
+        if not len(rv) == 4 or not all(0 <= x < 256 for x in rv):
+            raise ValueError('Invalid IP address', data)
+        return rv

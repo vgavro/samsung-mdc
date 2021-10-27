@@ -170,11 +170,9 @@ class MDCConnection:
             raise MDCResponseError('Unexpected header',
                                    resp + self.reader._buffer)
         if resp[1] != RESPONSE_CMD:
-            resp += self.reader._buffer
             raise MDCResponseError('Unexpected cmd',
                                    resp + self.reader._buffer)
         if resp[2] != id:
-            resp += self.reader._buffer
             raise MDCResponseError('Unexpected id', resp + self.reader._buffer)
         resp += await wait_for_read(self.reader, resp[3] + 1, self.timeout,
                                     'Response data read timeout')

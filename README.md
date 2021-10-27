@@ -6,7 +6,7 @@ It allows you to control a variety of different sources (TV, Monitor) through th
 
 [MDC Protocol specification - v15.0 2020-11-06](https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf)
 
-* Implemented *61* commands
+* Implemented *64* commands
 * Easy to extend using simple declarative API - see [samsung_mdc/commands.py](https://github.com/vgavro/samsung-mdc/blob/master/samsung_mdc/commands.py)
 * Detailed [CLI](#usage) help and parameters validation
 * Run commands async on numerous targets (using asyncio)
@@ -98,6 +98,9 @@ Options:
 * [picture_aspect](#picture_aspect) `[PICTURE_ASPECT_STATE]`
 * [screen_mode](#screen_mode) `[SCREEN_MODE_STATE]`
 * [screen_size](#screen_size) `(INCHES)`
+* [network_configuration](#network_configuration) `[IP_ADDRESS SUBNET_MASK GATEWAY_ADDRESS DNS_SERVER_ADDRESS]`
+* [network_mode](#network_mode) `[NETWORK_MODE_STATE]`
+* [weekly_restart](#weekly_restart) `[WEEKDAY TIME]`
 * [magicinfo_server](#magicinfo_server) `[MAGICINFO_SERVER_URL]`
 * [mdc_connection](#mdc_connection) `[MDC_CONNECTION_TYPE]`
 * [contrast](#contrast) `[CONTRAST]`
@@ -135,7 +138,7 @@ Options:
 * [clock_m](#clock_m) `[DATETIME]`
 * [virtual_remote](#virtual_remote) `KEY_CODE`
 * [network_standby](#network_standby) `[NETWORK_STANDBY_STATE]`
-* [dst](#dst) `[DST_STATE START_MONTH START_WEEK START_DAY_OF_WEEK START_HOUR START_MINUTE END_MONTH END_WEEK END_DAY_OF_WEEK END_HOUR END_MINUTE OFFSET]`
+* [dst](#dst) `[DST_STATE START_MONTH START_WEEK START_WEEKDAY START_TIME END_MONTH END_WEEK END_WEEKDAY END_TIME OFFSET]`
 * [auto_id_setting](#auto_id_setting) `[AUTO_ID_SETTING_STATE]`
 * [display_id](#display_id) `DISPLAY_ID_STATE`
 * [clock_s](#clock_s) `[DATETIME]`
@@ -281,6 +284,32 @@ Usage: samsung-mdc [OPTIONS] TARGET screen_size
 
 Data:
   INCHES  int (0-255)
+```
+#### network_configuration<a id="network_configuration"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET network_configuration [IP_ADDRESS
+                   SUBNET_MASK GATEWAY_ADDRESS DNS_SERVER_ADDRESS]
+
+Data:
+  IP_ADDRESS          IP address
+  SUBNET_MASK         IP address
+  GATEWAY_ADDRESS     IP address
+  DNS_SERVER_ADDRESS  IP address
+```
+#### network_mode<a id="network_mode"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET network_mode [NETWORK_MODE_STATE]
+
+Data:
+  NETWORK_MODE_STATE  DYNAMIC | STATIC
+```
+#### weekly_restart<a id="weekly_restart"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET weekly_restart [WEEKDAY TIME]
+
+Data:
+  WEEKDAY  list(,) SUN | SAT | FRI | THU | WED | TUE | MON
+  TIME     time (format: %H:%M:%S)
 ```
 #### magicinfo_server<a id="magicinfo_server"></a>
 ```
@@ -663,24 +692,22 @@ Data:
 #### dst<a id="dst"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET dst [DST_STATE START_MONTH START_WEEK
-                   START_DAY_OF_WEEK START_HOUR START_MINUTE END_MONTH
-                   END_WEEK END_DAY_OF_WEEK END_HOUR END_MINUTE OFFSET]
+                   START_WEEKDAY START_TIME END_MONTH END_WEEK END_WEEKDAY
+                   END_TIME OFFSET]
 
 Data:
-  DST_STATE          OFF | AUTO | MANUAL
-  START_MONTH        JAN | FEB | MAR | APR | MAY | JUN | JUL | AUG | SEP | OCT
-                     | NOV | DEC
-  START_WEEK         WEEK_1 | WEEK_2 | WEEK_3 | WEEK_4 | WEEK_LAST
-  START_DAY_OF_WEEK  SUN | MON | TUE | WED | THU | FRI | SAT
-  START_HOUR         int (0-23)
-  START_MINUTE       int (0-59)
-  END_MONTH          JAN | FEB | MAR | APR | MAY | JUN | JUL | AUG | SEP | OCT
-                     | NOV | DEC
-  END_WEEK           WEEK_1 | WEEK_2 | WEEK_3 | WEEK_4 | WEEK_LAST
-  END_DAY_OF_WEEK    SUN | MON | TUE | WED | THU | FRI | SAT
-  END_HOUR           int (0-23)
-  END_MINUTE         int (0-59)
-  OFFSET             PLUS_1_00 | PLUS_2_00
+  DST_STATE      OFF | AUTO | MANUAL
+  START_MONTH    JAN | FEB | MAR | APR | MAY | JUN | JUL | AUG | SEP | OCT |
+                 NOV | DEC
+  START_WEEK     WEEK_1 | WEEK_2 | WEEK_3 | WEEK_4 | WEEK_LAST
+  START_WEEKDAY  SUN | MON | TUE | WED | THU | FRI | SAT
+  START_TIME     time (format: %H:%M:%S)
+  END_MONTH      JAN | FEB | MAR | APR | MAY | JUN | JUL | AUG | SEP | OCT |
+                 NOV | DEC
+  END_WEEK       WEEK_1 | WEEK_2 | WEEK_3 | WEEK_4 | WEEK_LAST
+  END_WEEKDAY    SUN | MON | TUE | WED | THU | FRI | SAT
+  END_TIME       time (format: %H:%M:%S)
+  OFFSET         PLUS_1_00 | PLUS_2_00
 ```
 #### auto_id_setting<a id="auto_id_setting"></a>
 ```
