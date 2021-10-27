@@ -12,6 +12,49 @@ class SERIAL_NUMBER(Command):
     DATA = [Str('SERIAL_NUMBER')]
 
 
+class ERROR_STATUS(Command):
+    CMD = 0x0D
+    GET, SET = True, False
+
+    class LAMP_ERROR_STATE(Enum):
+        NORMAL = 0x00
+        ERROR = 0x01
+
+    class TEMPERATURE_ERROR_STATE(Enum):
+        NORMAL = 0x00
+        ERROR = 0x01
+
+    class BRIGHTNESS_SENSOR_ERROR_STATE(Enum):
+        NONE = 0x00
+        ERROR = 0x01
+        NORMAL = 0x02
+
+    class INPUT_SOURCE_ERROR_STATE(Enum):
+        """
+        No_Sync Error
+        Note: Invalid status will be replied with app source selected state.
+        Error status will be replied with input signal of not supported
+        resolution or no signal.
+        """
+        NORMAL = 0x00
+        ERROR = 0x01
+        INVALID = 0x02
+
+    class FAN_ERROR_STATE(Enum):
+        NORMAL = 0x00
+        ERROR = 0x01
+        NONE = 0x02  # Fan is not supported
+
+    DATA = [
+        LAMP_ERROR_STATE,
+        TEMPERATURE_ERROR_STATE,
+        BRIGHTNESS_SENSOR_ERROR_STATE,
+        INPUT_SOURCE_ERROR_STATE,
+        Int('TEMPERATURE'),
+        FAN_ERROR_STATE,
+    ]
+
+
 class SOFTWARE_VERSION(Command):
     CMD = 0x0E
     GET, SET = True, False

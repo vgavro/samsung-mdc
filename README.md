@@ -6,7 +6,7 @@ It allows you to control a variety of different sources (TV, Monitor) through th
 
 [MDC Protocol specification - v15.0 2020-11-06](https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf)
 
-* Implemented *64* commands
+* Implemented *65* commands
 * Easy to extend using simple declarative API - see [samsung_mdc/commands.py](https://github.com/vgavro/samsung-mdc/blob/master/samsung_mdc/commands.py)
 * Detailed [CLI](#usage) help and parameters validation
 * Run commands async on numerous targets (using asyncio)
@@ -89,6 +89,7 @@ Options:
 * [video](#video) `(CONTRAST BRIGHTNESS SHARPNESS COLOR TINT COLOR_TONE_STATE COLOR_TEMPERATURE _IGNORE)`
 * [rgb](#rgb) `(CONTRAST BRIGHTNESS COLOR_TONE_STATE COLOR_TEMPERATURE _IGNORE RED_GAIN GREEN_GAIN BLUE_GAIN)`
 * [serial_number](#serial_number) `(SERIAL_NUMBER)`
+* [error_status](#error_status) `(LAMP_ERROR_STATE TEMPERATURE_ERROR_STATE BRIGHTNESS_SENSOR_ERROR_STATE INPUT_SOURCE_ERROR_STATE TEMPERATURE FAN_ERROR_STATE)`
 * [software_version](#software_version) `(SOFTWARE_VERSION)`
 * [model_number](#model_number) `(MODEL_SPECIES MODEL_CODE TV_SUPPORT)`
 * [power](#power) `[POWER_STATE]`
@@ -208,6 +209,18 @@ Usage: samsung-mdc [OPTIONS] TARGET serial_number
 
 Data:
   SERIAL_NUMBER  str
+```
+#### error_status<a id="error_status"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET error_status
+
+Data:
+  LAMP_ERROR_STATE               NORMAL | ERROR
+  TEMPERATURE_ERROR_STATE        NORMAL | ERROR
+  BRIGHTNESS_SENSOR_ERROR_STATE  NONE | ERROR | NORMAL
+  INPUT_SOURCE_ERROR_STATE       NORMAL | ERROR | INVALID
+  TEMPERATURE                    int
+  FAN_ERROR_STATE                NORMAL | ERROR | NONE
 ```
 #### software_version<a id="software_version"></a>
 ```
