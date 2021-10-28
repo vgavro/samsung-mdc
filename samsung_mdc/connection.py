@@ -64,6 +64,9 @@ class MDCConnection:
                     asyncio.open_connection(target, **self.connection_kwargs),
                     self.connect_timeout, 'Connect timeout')
 
+            if self.verbose:
+                self.verbose('Connected')
+
             if pin is not None:
                 try:
                     await self.start_tls(pin)
@@ -82,8 +85,8 @@ class MDCConnection:
                         **self.connection_kwargs),
                     self.connect_timeout, 'Connect timeout')
 
-        if self.verbose:
-            self.verbose('Connected')
+            if self.verbose:
+                self.verbose('Connected')
 
     async def start_tls(self, pin):
         if isinstance(pin, int):
@@ -112,6 +115,9 @@ class MDCConnection:
         self.writer._transport = ssl_transport
         self.reader._transport = ssl_transport
 
+        if self.verbose:
+            self.verbose('TLS established')
+
         self.writer.write(pin)
         await wait_for(self.writer.drain(), self.timeout,
                        'Write pin timeout')
@@ -132,6 +138,9 @@ class MDCConnection:
                 raise MDCTLSAuthFailed(fail_code)
             raise MDCResponseError('Unexpected TLS auth response',
                                    resp + self.reader._buffer)
+
+        if self.verbose:
+            self.verbose('TLS authentication passed')
 
     @property
     def is_opened(self):
