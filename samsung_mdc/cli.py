@@ -5,7 +5,8 @@
 # BEWARE: If you want something flexible and overridable for cli processing,
 # "click" just may not be your choice...
 
-from datetime import time
+from datetime import time, datetime
+from enum import Enum
 import asyncio
 import re
 import os.path
@@ -20,6 +21,16 @@ from .utils import parse_hex, repr_hex
 
 def _parse_int(x):
     return int(x, 16) if x.startswith('0x') else int(x)
+
+
+def _repr(val, root=True):
+    if isinstance(val, tuple):
+        return (' ' if root else ',').join(_repr(x, False) for x in val)
+    if isinstance(val, (datetime, time)):
+        return val.isoformat()
+    elif isinstance(val, Enum):
+        return f'<{val.__class__.__name__}.{val.name}:{val.value}>'
+    return str(val)
 
 
 def trim_docstring(docstring):
@@ -344,7 +355,8 @@ class MDCClickCommand(FixedSubcommand):
         async def mdc_call(connection, display_id):
             try:
                 print(f'{display_id}@{connection.target}',
-                      await self.mdc_command(connection, display_id, *args))
+                      _repr(await self.mdc_command(connection, display_id,
+                                                   *args)))
             except Exception as exc:
                 print(f'{display_id}@{connection.target}',
                       f'{exc.__class__.__name__}: {exc}')
