@@ -3,8 +3,8 @@ from setuptools import setup, find_packages
 exec(open('samsung_mdc/version.py').read())
 
 requires = [
-    'click',
-    'pyserial-asyncio'
+    'click',  # tested: click >=7,<=8
+    'pyserial-asyncio'  # tested: pyserial==3.5; pyserial-asyncio==0.5
 ]
 
 setup(

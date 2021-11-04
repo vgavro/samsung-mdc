@@ -53,6 +53,25 @@ samsung-mdc --help
 ## Usage<a id="usage"></a>
 {{usage}}
 
+## Troubleshooting
+
+### Finding DISPLAY ID
+
+On most devices it's usually `0` or `1`. Some devices may use `255` (0xFF) or `254` (0xFE) as all/any display, but behavior in such cases for more than 1 display is undefined.
+
+Display id can be found using remote control: `Home` -> `ID Settings`.
+
+### NAKError
+
+If you receive NAK errors on some commands, you may try to:
+
+* Ensure that device is powered on and completely loaded
+* Switch to input source HDMI1
+* Reboot device
+* Reset all settings
+* Disable MagicINFO
+* Factory reset (using "Service Menu")
+
 ## Python example<a id="python-example"></a>
 ```python3
 {{python_example}}

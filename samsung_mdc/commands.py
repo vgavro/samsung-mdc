@@ -607,7 +607,7 @@ class OSD_TYPE(Command):
 
 class TIMER_15(Command):
     """
-    Integrated timer function (15 parameters version).
+    Integrated timer function (15 data-length version).
 
     Note: This depends on product and will not work on older versions.
 
@@ -655,7 +655,6 @@ class TIMER_15(Command):
         Bool('OFF_ENABLED'),
 
         EnumField(TIMER_REPEAT, 'ON_REPEAT'),
-        # TODO: implement bitmask field
         Bitmask(WEEKDAY, 'ON_MANUAL_WEEKDAY'),
 
         EnumField(TIMER_REPEAT, 'OFF_REPEAT'),
@@ -677,24 +676,45 @@ class TIMER_15(Command):
         return self.parse_response_data(data)
 
     @classmethod
+    def parse_response_data(cls, data, *args, _timer_version_check=True,
+                            **kwargs):
+        if _timer_version_check and len(data) == 13:
+            raise RuntimeError('13 data-length version of timer received, '
+                               'use timer_13 instead')
+        return super().parse_response_data(data, *args, **kwargs)
+
+    @classmethod
     def get_order(cls):
         return (0xA4, cls.name)
 
 
 class TIMER_13(TIMER_15):
     """
-    Integrated timer function (13 parameters version).
+    Integrated timer function (13 data-length version).
 
     Note: This depends on product and will not work on newer versions.
     """
-    DATA = ([
-        f for f in TIMER_15.DATA
-        if not f.name.endswith('_REPEAT')
-        and not f.name.endswith('_MANUAL_WEEKDAY')
-    ] + [
+    DATA = [
+        Time12H('ON_TIME'),
+        Bool('ON_ENABLED'),
+
+        Time12H('OFF_TIME'),
+        Bool('OFF_ENABLED'),
+
         EnumField(TIMER_15.TIMER_REPEAT, 'REPEAT'),
         Bitmask(TIMER_15.WEEKDAY, 'MANUAL_WEEKDAY'),
-    ])
+        VOLUME.VOLUME,
+        INPUT_SOURCE.INPUT_SOURCE_STATE,
+        TIMER_15.HOLIDAY_APPLY,
+    ]
+
+    @classmethod
+    def parse_response_data(cls, data, *args, **kwargs):
+        if len(data) == 15:
+            raise RuntimeError('15 data-length version of timer received, '
+                               'use timer_15 instead')
+        return super().parse_response_data(
+            data, *args, _timer_version_check=False, **kwargs)
 
 
 class CLOCK_S(Command):

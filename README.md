@@ -136,7 +136,7 @@ Options:
 * [energy_saving](#energy_saving) `[ENERGY_SAVING_STATE]`
 * [reset](#reset) `RESET_TARGET`
 * [osd_type](#osd_type) `[OSD_TYPE OSD_ENABLED]`
-* [timer_13](#timer_13) `TIMER_ID [ON_TIME ON_ENABLED OFF_TIME OFF_ENABLED VOLUME INPUT_SOURCE_STATE HOLIDAY_APPLY REPEAT MANUAL_WEEKDAY]`
+* [timer_13](#timer_13) `TIMER_ID [ON_TIME ON_ENABLED OFF_TIME OFF_ENABLED REPEAT MANUAL_WEEKDAY VOLUME INPUT_SOURCE_STATE HOLIDAY_APPLY]`
 * [timer_15](#timer_15) `TIMER_ID [ON_TIME ON_ENABLED OFF_TIME OFF_ENABLED ON_REPEAT ON_MANUAL_WEEKDAY OFF_REPEAT OFF_MANUAL_WEEKDAY VOLUME INPUT_SOURCE_STATE HOLIDAY_APPLY]`
 * [clock_m](#clock_m) `[DATETIME]`
 * [virtual_remote](#virtual_remote) `KEY_CODE`
@@ -596,10 +596,10 @@ Data:
 #### timer_13<a id="timer_13"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET timer_13 TIMER_ID [ON_TIME ON_ENABLED
-                   OFF_TIME OFF_ENABLED VOLUME INPUT_SOURCE_STATE
-                   HOLIDAY_APPLY REPEAT MANUAL_WEEKDAY]
+                   OFF_TIME OFF_ENABLED REPEAT MANUAL_WEEKDAY VOLUME
+                   INPUT_SOURCE_STATE HOLIDAY_APPLY]
 
-  Integrated timer function (13 parameters version).
+  Integrated timer function (13 data-length version).
 
   Note: This depends on product and will not work on newer versions.
 
@@ -609,6 +609,9 @@ Data:
   ON_ENABLED          bool
   OFF_TIME            time (format: %H:%M:%S)
   OFF_ENABLED         bool
+  REPEAT              ONCE | EVERYDAY | MON_FRI | MON_SAT | SAT_SUN |
+                      MANUAL_WEEKDAY
+  MANUAL_WEEKDAY      list(,) SUN | MON | TUE | WED | THU | FRI | SAT
   VOLUME              int (0-100)
   INPUT_SOURCE_STATE  NONE | S_VIDEO | COMPONENT | AV | AV2 | SCART1 | DVI |
                       PC | BNC | DVI_VIDEO | MAGIC_INFO | HDMI1 | HDMI1_PC |
@@ -619,9 +622,6 @@ Data:
                       INTERNAL_USB | URL_LAUNCHER | IWB
   HOLIDAY_APPLY       DONT_APPLY_BOTH | APPLY_BOTH | ON_TIMER_ONLY_APPLY |
                       OFF_TIMER_ONLY_APPLY
-  REPEAT              ONCE | EVERYDAY | MON_FRI | MON_SAT | SAT_SUN |
-                      MANUAL_WEEKDAY
-  MANUAL_WEEKDAY      list(,) SUN | MON | TUE | WED | THU | FRI | SAT
 ```
 #### timer_15<a id="timer_15"></a>
 ```
@@ -629,7 +629,7 @@ Usage: samsung-mdc [OPTIONS] TARGET timer_15 TIMER_ID [ON_TIME ON_ENABLED
                    OFF_TIME OFF_ENABLED ON_REPEAT ON_MANUAL_WEEKDAY OFF_REPEAT
                    OFF_MANUAL_WEEKDAY VOLUME INPUT_SOURCE_STATE HOLIDAY_APPLY]
 
-  Integrated timer function (15 parameters version).
+  Integrated timer function (15 data-length version).
 
   Note: This depends on product and will not work on older versions.
 
@@ -855,6 +855,25 @@ Arguments:
   command  Command and (optionally) subcommand (example: a1 or a1:b2)
   data     Data payload if any (example: a1:b2)
 ```
+
+## Troubleshooting
+
+### Finding DISPLAY ID
+
+On most devices it's usually `0` or `1`. Some devices may use `255` (0xFF) or `254` (0xFE) as all/any display, but behavior in such cases for more than 1 display is undefined.
+
+Display id can be found using remote control: `Home` -> `ID Settings`.
+
+### NAKError
+
+If you receive NAK errors on some commands, you may try to:
+
+* Ensure that device is powered on and completely loaded
+* Switch to input source HDMI1
+* Reboot device
+* Reset all settings
+* Disable MagicINFO
+* Factory reset (using "Service Menu")
 
 ## Python example<a id="python-example"></a>
 ```python3
