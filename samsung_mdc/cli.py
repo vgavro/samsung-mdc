@@ -17,6 +17,7 @@ import click
 
 from . import MDC, fields, __version__
 from .utils import parse_hex, repr_hex
+from .exceptions import NAKError
 
 
 def _parse_int(x):
@@ -24,6 +25,10 @@ def _parse_int(x):
 
 
 def _repr(val, root=True):
+    if isinstance(val, list):
+        # quickfix for script command repr
+        # maybe this should better be fixed in create_mdc_call
+        return ' '.join(_repr(x, root) for x in val)
     if isinstance(val, tuple):
         return (' ' if root else ',').join(_repr(x, False) for x in val)
     if isinstance(val, (datetime, time)):
@@ -572,12 +577,14 @@ clear_menu
               help='Retry script if failed (count)')
 @click.option('--retry-script-sleep', default=0, type=float,
               help='Sleep before script retry (seconds)')
+@click.option('--ignore-nak', is_flag=True,
+              help='Ignore negative acknowledgement errors')
 @click.argument('script_file', type=click.File(),
                 help='Text file with commands, separated by newline.',
                 cls=ArgumentWithHelp)
 @click.pass_context
 def script(ctx, script_file, sleep, retry_command, retry_command_sleep,
-           retry_script, retry_script_sleep):
+           retry_script, retry_script_sleep, ignore_nak):
     import shlex
 
     retry_command_sleep = retry_command_sleep or sleep
@@ -654,10 +661,13 @@ def script(ctx, script_file, sleep, retry_command, retry_command_sleep,
                         print(
                             f'{display_id}@{connection.target}',
                             f'{retry_script_i}:{command_i}:{retry_command_i}',
-                            f'{call_.name}: {call_.args}')
+                            f'{call_.name} {_repr(call_.args)}')
                     try:
                         await call_(connection, display_id)
                     except Exception as exc:
+                        if ignore_nak and isinstance(exc, NAKError):
+                            last_exc = None
+                            break
                         last_exc = exc
                     else:
                         last_exc = None
