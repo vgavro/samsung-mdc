@@ -843,6 +843,7 @@ Options:
   --retry-command-sleep FLOAT  Sleep before command retry (seconds)
   -r, --retry-script INTEGER   Retry script if failed (count)
   --retry-script-sleep FLOAT   Sleep before script retry (seconds)
+  --ignore-nak                 Ignore negative acknowledgement errors
   --help                       Show this message and exit.
 ```
 #### raw<a id="raw"></a>
