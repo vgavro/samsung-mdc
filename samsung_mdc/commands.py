@@ -746,8 +746,8 @@ class VIRTUAL_REMOTE(Command):
     """
     This function support that MDC command can work same as remote control.
 
-    Note: In a certain model, 0x79 content key works as Home
-    and 0x1f Display key works as Info.
+    Note: In a certain model, 0x79 CONTENT key works as HOME
+    and 0x1F DISPLAY key works as INFO.
     """
     CMD = 0xB0
     GET, SET = False, True
@@ -774,10 +774,11 @@ class VIRTUAL_REMOTE(Command):
         KEY_YELLOW = 0x15
         KEY_CYAN = 0x16
         KEY_MENU = 0x1A
-        KEY_DISPLAY = 0x1F
+        KEY_DISPLAY = 0x1F  # or KEY_INFO
         KEY_DIGIT = 0x23
         KEY_PIP_TV_VIDEO = 0x24
         KEY_EXIT = 0x2D
+        KEY_MAGICINFO = 0x30  # limited support
         KEY_REW = 0x45
         KEY_STOP = 0x46
         KEY_PLAY = 0x47
@@ -785,7 +786,7 @@ class VIRTUAL_REMOTE(Command):
         KEY_PAUSE = 0x4A
         KEY_TOOLS = 0x4B
         KEY_RETURN = 0x58
-        KEY_MAGICINFO_LITE = 0x5B
+        KEY_MAGICINFO_LITE = 0x5B  # limited support
         KEY_CURSOR_UP = 0x60
         KEY_CURSOR_DOWN = 0x61
         KEY_CURSOR_RIGHT = 0x62

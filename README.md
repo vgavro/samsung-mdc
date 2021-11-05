@@ -683,19 +683,19 @@ Usage: samsung-mdc [OPTIONS] TARGET virtual_remote KEY_CODE
 
   This function support that MDC command can work same as remote control.
 
-  Note: In a certain model, 0x79 content key works as Home and 0x1f Display
-  key works as Info.
+  Note: In a certain model, 0x79 CONTENT key works as HOME and 0x1F DISPLAY
+  key works as INFO.
 
 Data:
   KEY_CODE  KEY_SOURCE | KEY_POWER | KEY_1 | KEY_2 | KEY_3 | KEY_VOLUME_UP |
             KEY_4 | KEY_5 | KEY_6 | KEY_VOLUME_DOWN | KEY_7 | KEY_8 | KEY_9 |
             KEY_MUTE | KEY_CHANNEL_DOWN | KEY_0 | KEY_CHANNEL_UP | KEY_GREEN |
             KEY_YELLOW | KEY_CYAN | KEY_MENU | KEY_DISPLAY | KEY_DIGIT |
-            KEY_PIP_TV_VIDEO | KEY_EXIT | KEY_REW | KEY_STOP | KEY_PLAY |
-            KEY_FF | KEY_PAUSE | KEY_TOOLS | KEY_RETURN | KEY_MAGICINFO_LITE |
-            KEY_CURSOR_UP | KEY_CURSOR_DOWN | KEY_CURSOR_RIGHT |
-            KEY_CURSOR_LEFT | KEY_ENTER | KEY_RED | KEY_LOCK | KEY_CONTENT |
-            DISCRET_POWER_OFF | KEY_3D
+            KEY_PIP_TV_VIDEO | KEY_EXIT | KEY_MAGICINFO | KEY_REW | KEY_STOP |
+            KEY_PLAY | KEY_FF | KEY_PAUSE | KEY_TOOLS | KEY_RETURN |
+            KEY_MAGICINFO_LITE | KEY_CURSOR_UP | KEY_CURSOR_DOWN |
+            KEY_CURSOR_RIGHT | KEY_CURSOR_LEFT | KEY_ENTER | KEY_RED |
+            KEY_LOCK | KEY_CONTENT | DISCRET_POWER_OFF | KEY_3D
 ```
 #### network_standby<a id="network_standby"></a>
 ```
