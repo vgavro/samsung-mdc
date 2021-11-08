@@ -143,8 +143,7 @@ class ArgumentWithHelpCommandMixin:
         self.help_arguments_label = help_arguments_label
         super().__init__(*args, **kwargs)
 
-    def format_options(self, ctx, formatter):
-        # Override this to format ArgumentWithHelp before options
+    def format_arguments(self, ctx, formatter):
         args = []
         for param in self.get_params(ctx):
             if isinstance(param, click.Argument):
@@ -154,6 +153,9 @@ class ArgumentWithHelpCommandMixin:
             with formatter.section(self.help_arguments_label):
                 formatter.write_dl(args)
 
+    def format_options(self, ctx, formatter):
+        # Override this to format ArgumentWithHelp before options
+        self.format_arguments(ctx, formatter)
         super().format_options(ctx, formatter)
 
 
@@ -256,6 +258,18 @@ class MDCClickCommand(FixedSubcommand):
                 self._get_argument_from_mdc_field(field, i))
 
         super().__init__(name, **kwargs)
+
+    def format_arguments(self, ctx, formatter):
+        super().format_arguments(ctx, formatter)
+        if getattr(self.mdc_command, 'RESPONSE_EXTRA', []):
+            args = [
+                self._get_argument_from_mdc_field(field)
+                for field in self.mdc_command.RESPONSE_EXTRA
+            ]
+            with formatter.section('Response extra'):
+                formatter.write_dl((
+                    param.metavar or param.name, getattr(param, 'help', '')
+                ) for param in args)
 
     def _get_argument_from_mdc_field(self, field, ident=None):
         if isinstance(field, fields.Bitmask):

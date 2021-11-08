@@ -6,7 +6,7 @@ It allows you to control a variety of different sources (TV, Monitor) through th
 
 [MDC Protocol specification - v15.0 2020-11-06](https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf)
 
-* Implemented *65* commands
+* Implemented *68* commands
 * Easy to extend using simple declarative API - see [samsung_mdc/commands.py](https://github.com/vgavro/samsung-mdc/blob/master/samsung_mdc/commands.py)
 * Detailed [CLI](#usage) help and parameters validation
 * Run commands async on numerous targets (using asyncio)
@@ -139,6 +139,9 @@ Options:
 * [timer_13](#timer_13) `TIMER_ID [ON_TIME ON_ENABLED OFF_TIME OFF_ENABLED REPEAT MANUAL_WEEKDAY VOLUME INPUT_SOURCE_STATE HOLIDAY_APPLY]`
 * [timer_15](#timer_15) `TIMER_ID [ON_TIME ON_ENABLED OFF_TIME OFF_ENABLED ON_REPEAT ON_MANUAL_WEEKDAY OFF_REPEAT OFF_MANUAL_WEEKDAY VOLUME INPUT_SOURCE_STATE HOLIDAY_APPLY]`
 * [clock_m](#clock_m) `[DATETIME]`
+* [holiday_set](#holiday_set) `HOLIDAY_CHANGE START_MONTH START_DAY END_MONTH END_DAY`
+* [holiday_get](#holiday_get) `INDEX`
+* [holiday_get_count](#holiday_get_count) `(HOLIDAY_COUNT)`
 * [virtual_remote](#virtual_remote) `KEY_CODE`
 * [network_standby](#network_standby) `[NETWORK_STANDBY_STATE]`
 * [dst](#dst) `[DST_STATE START_MONTH START_WEEK START_WEEKDAY START_TIME END_MONTH END_WEEK END_WEEKDAY END_TIME OFFSET]`
@@ -157,10 +160,18 @@ Options:
 ```
 Usage: samsung-mdc [OPTIONS] TARGET status
 
+  Get the device various state like power, volume, sound mute, input source,
+  picture aspect ratio.
+
+  Note: For no audio models volume and mute returns 0xFF (255).
+
+  N_TIME_NF, F_TIME_NF: OnTime/OffTime ON/OFF value (old type timer, now it's
+  always 0x00).
+
 Data:
   POWER_STATE           OFF | ON | REBOOT
   VOLUME                int (0-100)
-  MUTE_STATE            OFF | ON
+  MUTE_STATE            OFF | ON | NONE
   INPUT_SOURCE_STATE    NONE | S_VIDEO | COMPONENT | AV | AV2 | SCART1 | DVI |
                         PC | BNC | DVI_VIDEO | MAGIC_INFO | HDMI1 | HDMI1_PC |
                         HDMI2 | HDMI2_PC | DISPLAY_PORT_1 | DISPLAY_PORT_2 |
@@ -259,7 +270,7 @@ Data:
 Usage: samsung-mdc [OPTIONS] TARGET mute [MUTE_STATE]
 
 Data:
-  MUTE_STATE  OFF | ON
+  MUTE_STATE  OFF | ON | NONE
 ```
 #### input_source<a id="input_source"></a>
 ```
@@ -677,6 +688,38 @@ Data:
   DATETIME  datetime (format: %Y-%m-%dT%H:%M:%S / %Y-%m-%d %H:%M:%S /
             %Y-%m-%dT%H:%M / %Y-%m-%d %H:%M)
 ```
+#### holiday_set<a id="holiday_set"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET holiday_set HOLIDAY_CHANGE START_MONTH
+                   START_DAY END_MONTH END_DAY
+
+Data:
+  HOLIDAY_CHANGE  ADD | DELETE | DELETE_ALL
+  START_MONTH     int (0-12)
+  START_DAY       int (0-31)
+  END_MONTH       int (0-12)
+  END_DAY         int (0-31)
+```
+#### holiday_get<a id="holiday_get"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET holiday_get INDEX
+
+Data:
+  INDEX  int
+
+Response extra:
+  START_MONTH  int
+  START_DAY    int
+  END_MONTH    int
+  END_DAY      int
+```
+#### holiday_get_count<a id="holiday_get_count"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET holiday_get_count
+
+Data:
+  HOLIDAY_COUNT  int
+```
 #### virtual_remote<a id="virtual_remote"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET virtual_remote KEY_CODE
@@ -723,6 +766,9 @@ Data:
   END_WEEKDAY    SUN | MON | TUE | WED | THU | FRI | SAT
   END_TIME       time (format: %H:%M:%S)
   OFFSET         PLUS_1_00 | PLUS_2_00
+
+Response extra:
+  TUNER_SUPPORT  bool
 ```
 #### auto_id_setting<a id="auto_id_setting"></a>
 ```

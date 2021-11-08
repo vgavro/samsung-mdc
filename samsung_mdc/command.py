@@ -27,7 +27,9 @@ class CommandMcs(type):
         ]
         dict['RESPONSE_DATA'] = [
             EnumField(x) if isinstance(x, type) and issubclass(x, Enum) else x
-            for x in dict.get('RESPONSE_DATA', dict['DATA'])
+            for x in dict.get(
+                'RESPONSE_DATA',
+                dict['DATA'] + dict.get('RESPONSE_EXTRA', []))
         ]
 
         cls = type.__new__(mcs, name, bases, dict)

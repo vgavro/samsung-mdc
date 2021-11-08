@@ -108,6 +108,7 @@ class MUTE(Command):
     class MUTE_STATE(Enum):
         OFF = 0x00
         ON = 0x01
+        NONE = 0x255  # Unavailable
 
     DATA = [MUTE_STATE]
 
@@ -742,6 +743,55 @@ class CLOCK_M(CLOCK_S):
     DATA = [DateTime(seconds=False)]
 
 
+class HOLIDAY_SET(Command):
+    CMD = 0xA8
+    GET, SET = False, True
+
+    class HOLIDAY_CHANGE(Enum):
+        ADD = 0x00
+        DELETE = 0x01
+        DELETE_ALL = 0x02
+
+    DATA = [
+        HOLIDAY_CHANGE,
+        Int('START_MONTH', range(13)),
+        Int('START_DAY', range(32)),
+        Int('END_MONTH', range(13)),
+        Int('END_DAY', range(32)),
+        ]
+
+
+class HOLIDAY_GET_COUNT(Command):
+    CMD = 0xA9
+    GET, SET = True, False
+
+    DATA = [
+        Int('HOLIDAY_COUNT'),
+    ]
+
+    @classmethod
+    def parse_response_data(cls, data):
+        assert len(data) == 5, 'Unexpected response data length'
+        assert data[1:] == bytes([0, 0, 0, 0]), 'Unexpected response data'
+        return super().parse_response_data(data[:1])
+
+
+class HOLIDAY_GET(Command):
+    CMD = 0xA9
+    GET, SET = False, True
+
+    DATA = [
+        Int('INDEX'),
+    ]
+
+    RESPONSE_EXTRA = [
+        Int('START_MONTH'),
+        Int('START_DAY'),
+        Int('END_MONTH'),
+        Int('END_DAY'),
+    ]
+
+
 class VIRTUAL_REMOTE(Command):
     """
     This function support that MDC command can work same as remote control.
@@ -881,7 +931,9 @@ class DST(Command):
         OFFSET,
     ]
 
-    RESPONSE_DATA = DATA + [Bool('TUNER_SUPPORT')]
+    RESPONSE_EXTRA = [
+        Bool('TUNER_SUPPORT'),
+    ]
 
 
 class AUTO_ID_SETTING(Command):
@@ -966,6 +1018,16 @@ class PANEL(Command):
 
 
 class STATUS(Command):
+    """
+    Get the device various state like power, volume, sound mute, input source,
+    picture aspect ratio.
+
+    Note:
+    For no audio models volume and mute returns 0xFF (255).
+
+    N_TIME_NF, F_TIME_NF: OnTime/OffTime ON/OFF value
+    (old type timer, now it's always 0x00).
+    """
     CMD = 0x00
     GET, SET = True, False
     DATA = [
