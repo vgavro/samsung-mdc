@@ -693,6 +693,11 @@ Data:
 Usage: samsung-mdc [OPTIONS] TARGET holiday_set HOLIDAY_CHANGE START_MONTH
                    START_DAY END_MONTH END_DAY
 
+  Add/Delete the device holiday schedule with the holiday schedule itself
+  start month/day and end month/day.
+
+  Note: On DELETE_ALL all parameters should be 0x00.
+
 Data:
   HOLIDAY_CHANGE  ADD | DELETE | DELETE_ALL
   START_MONTH     int (0-12)

@@ -744,6 +744,12 @@ class CLOCK_M(CLOCK_S):
 
 
 class HOLIDAY_SET(Command):
+    """
+    Add/Delete the device holiday schedule with the holiday schedule itself
+    start month/day and end month/day.
+
+    Note: On DELETE_ALL all parameters should be 0x00.
+    """
     CMD = 0xA8
     GET, SET = False, True
 
