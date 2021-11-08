@@ -6,7 +6,7 @@ It allows you to control a variety of different sources (TV, Monitor) through th
 
 [MDC Protocol specification - v15.0 2020-11-06](https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf)
 
-* Implemented *68* commands
+* Implemented *67* commands
 * Easy to extend using simple declarative API - see [samsung_mdc/commands.py](https://github.com/vgavro/samsung-mdc/blob/master/samsung_mdc/commands.py)
 * Detailed [CLI](#usage) help and parameters validation
 * Run commands async on numerous targets (using asyncio)
@@ -140,9 +140,8 @@ Options:
 * [timer_13](#timer_13) `TIMER_ID [ON_TIME ON_ENABLED OFF_TIME OFF_ENABLED REPEAT MANUAL_WEEKDAY VOLUME INPUT_SOURCE_STATE HOLIDAY_APPLY]`
 * [timer_15](#timer_15) `TIMER_ID [ON_TIME ON_ENABLED OFF_TIME OFF_ENABLED ON_REPEAT ON_MANUAL_WEEKDAY OFF_REPEAT OFF_MANUAL_WEEKDAY VOLUME INPUT_SOURCE_STATE HOLIDAY_APPLY]`
 * [clock_m](#clock_m) `[DATETIME]`
-* [holiday_set](#holiday_set) `HOLIDAY_CHANGE START_MONTH START_DAY END_MONTH END_DAY`
-* [holiday_get](#holiday_get) `INDEX`
-* [holiday_get_count](#holiday_get_count) `(HOLIDAY_COUNT)`
+* [holiday_set](#holiday_set) `HOLIDAY_MANAGE START_MONTH START_DAY END_MONTH END_DAY`
+* [holiday_get](#holiday_get) `[INDEX]`
 * [virtual_remote](#virtual_remote) `KEY_CODE`
 * [network_standby](#network_standby) `[NETWORK_STANDBY_STATE]`
 * [dst](#dst) `[DST_STATE START_MONTH START_WEEK START_WEEKDAY START_TIME END_MONTH END_WEEK END_WEEKDAY END_TIME OFFSET]`
@@ -691,7 +690,7 @@ Data:
 ```
 #### holiday_set<a id="holiday_set"></a>
 ```
-Usage: samsung-mdc [OPTIONS] TARGET holiday_set HOLIDAY_CHANGE START_MONTH
+Usage: samsung-mdc [OPTIONS] TARGET holiday_set HOLIDAY_MANAGE START_MONTH
                    START_DAY END_MONTH END_DAY
 
   Add/Delete the device holiday schedule with the holiday schedule itself
@@ -700,7 +699,7 @@ Usage: samsung-mdc [OPTIONS] TARGET holiday_set HOLIDAY_CHANGE START_MONTH
   Note: On DELETE_ALL all parameters should be 0x00.
 
 Data:
-  HOLIDAY_CHANGE  ADD | DELETE | DELETE_ALL
+  HOLIDAY_MANAGE  ADD | DELETE | DELETE_ALL
   START_MONTH     int (0-12)
   START_DAY       int (0-31)
   END_MONTH       int (0-12)
@@ -708,7 +707,11 @@ Data:
 ```
 #### holiday_get<a id="holiday_get"></a>
 ```
-Usage: samsung-mdc [OPTIONS] TARGET holiday_get INDEX
+Usage: samsung-mdc [OPTIONS] TARGET holiday_get [INDEX]
+
+  Get the device holiday schedule.
+
+  If INDEX is not specified, returns total number of Holiday Information.
 
 Data:
   INDEX  int
@@ -718,13 +721,6 @@ Response extra:
   START_DAY    int
   END_MONTH    int
   END_DAY      int
-```
-#### holiday_get_count<a id="holiday_get_count"></a>
-```
-Usage: samsung-mdc [OPTIONS] TARGET holiday_get_count
-
-Data:
-  HOLIDAY_COUNT  int
 ```
 #### virtual_remote<a id="virtual_remote"></a>
 ```

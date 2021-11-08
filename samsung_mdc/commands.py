@@ -753,13 +753,13 @@ class HOLIDAY_SET(Command):
     CMD = 0xA8
     GET, SET = False, True
 
-    class HOLIDAY_CHANGE(Enum):
+    class HOLIDAY_MANAGE(Enum):
         ADD = 0x00
         DELETE = 0x01
         DELETE_ALL = 0x02
 
     DATA = [
-        HOLIDAY_CHANGE,
+        HOLIDAY_MANAGE,
         Int('START_MONTH', range(13)),
         Int('START_DAY', range(32)),
         Int('END_MONTH', range(13)),
@@ -767,24 +767,14 @@ class HOLIDAY_SET(Command):
         ]
 
 
-class HOLIDAY_GET_COUNT(Command):
-    CMD = 0xA9
-    GET, SET = True, False
-
-    DATA = [
-        Int('HOLIDAY_COUNT'),
-    ]
-
-    @classmethod
-    def parse_response_data(cls, data):
-        assert len(data) == 5, 'Unexpected response data length'
-        assert data[1:] == bytes([0, 0, 0, 0]), 'Unexpected response data'
-        return super().parse_response_data(data[:1])
-
-
 class HOLIDAY_GET(Command):
+    """
+    Get the device holiday schedule.
+
+    If INDEX is not specified, returns total number of Holiday Information.
+    """
     CMD = 0xA9
-    GET, SET = False, True
+    GET, SET = True, True
 
     DATA = [
         Int('INDEX'),
@@ -796,6 +786,12 @@ class HOLIDAY_GET(Command):
         Int('END_MONTH'),
         Int('END_DAY'),
     ]
+
+    @classmethod
+    def parse_response_data(cls, data):
+        if data[1:] == bytes([0, 0, 0, 0]):
+            return [int(data[0])]
+        return super().parse_response_data(data)
 
 
 class VIRTUAL_REMOTE(Command):
