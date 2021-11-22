@@ -2,7 +2,7 @@ from enum import Enum
 
 from .command import Command
 from .fields import (Enum as EnumField, Int, Bool, Str, Time12H, Time,
-                     DateTime, Bitmask, IPAddress)
+                     DateTime, Bitmask, IPAddress, VideoWall)
 from .utils import parse_enum_bitmask
 
 
@@ -1095,3 +1095,20 @@ class VIDEO_WALL_MODE(Command):
         NATURAL = 0x00
         FULL = 0x01
     DATA = [VIDEO_WALL_MODE_SET]
+
+class VIDEO_WALL_MODEL(Command):
+    """
+    Get or set VIDEO WALL MODEL.
+
+    MODEL: Size of the wall in x/y coordinates; ie. 2,2 or 4,1 and the serial number (s):\n
+
+    x,y,s
+
+    Note: The SERIAL, or position of the display in the video wall, counting from the first display
+
+    Note: Needs VIDEO_WALL_ENABLE to be ON.
+    """
+    CMD = 0x89
+    GET, SET = True, True
+
+    DATA = [VideoWall('MODEL')]
