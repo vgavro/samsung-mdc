@@ -1059,3 +1059,39 @@ class RGB(Command):
         Int('_IGNORE', range(1)),
         Int('RED_GAIN'), Int('GREEN_GAIN'), Int('BLUE_GAIN'),
     ]
+
+
+class VIDEO_WALL_ENABLE(Command):
+    """
+    Get or set the device in VIDEO WALL state.
+    This will split the primary input source into smaller N number of squares and display them
+    instead.
+
+    Note: The device needs to be capable of this operation. Usually a primary high resolution source signal
+    is daisy chained to lower resolution displays in a video wall using HDMI/DP.
+    """
+    CMD = 0x84
+    GET, SET = True, True
+
+    class VIDEO_WALL_STATE(Enum):
+        OFF = 0x00
+        ON = 0x01
+    DATA = [VIDEO_WALL_STATE]
+
+
+class VIDEO_WALL_MODE(Command):
+    """
+    Get or set the device in aspect ratio of the VIDEO WALL.
+
+    FULL: stretch input source to fill display
+    NATURAL: Keep aspect ratio of input source; do not fill display.
+
+    Note: Needs VIDEO_WALL_ENABLE to be ON.
+    """
+    CMD = 0x5C
+    GET, SET = True, True
+
+    class VIDEO_WALL_MODE_SET(Enum):
+        NATURAL = 0x00
+        FULL = 0x01
+    DATA = [VIDEO_WALL_MODE_SET]
