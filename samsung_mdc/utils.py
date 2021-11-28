@@ -52,3 +52,21 @@ def repr_hex(value):
 
 def parse_hex(value):
     return value and bytes(int(x, 16) for x in value.split(':')) or b''
+
+
+def parse_videowall(value):
+    """
+    Splits 8 byte 'coordinates' to 2x4 byte x/y/serial tuple
+    The expected representation is Y, X
+    """
+    # Display returns as 2-bytes, coordinates and serial
+    return divmod(value[0], 1<<4)[::-1] + (value[1], )
+
+
+def pack_videowall(value):
+    """
+    Takes tuple of length 2 and combines its numbers as 2x4 to one 8 bit value
+    Reverses representation to more intuitive X, Y
+    """
+    model = repr_hex(value)
+    return model[4] + model[1] + model[-3:]
