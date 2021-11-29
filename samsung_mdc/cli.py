@@ -292,9 +292,9 @@ class MDCClickCommand(FixedSubcommand):
         elif isinstance(field, fields.IPAddress):
             type = str
             help = 'IP address'
-        elif isinstance(field, fields.VideoWall):
+        elif isinstance(field, fields.VideoWallModel):
             type = str
-            help = 'Video Wall model (format: X,Y,serial, eg. 4,5,1)'
+            help = 'Video Wall model (format: X,Y eg. 4,5)'
         else:
             type = {
                 fields.Str: str,

@@ -2,7 +2,8 @@ from typing import Sequence
 from datetime import datetime, time
 
 from .utils import (
-    parse_mdc_time, pack_mdc_time, parse_enum_bitmask, pack_bitmask, pack_videowall, parse_videowall)
+    parse_mdc_time, pack_mdc_time, parse_enum_bitmask, pack_bitmask,
+    pack_videowall_model, parse_videowall_model)
 
 
 class Field:
@@ -153,14 +154,18 @@ class IPAddress(Field):
         return rv
 
 
-class VideoWall(Field):
-    parse_len = 2 # first byte = coordinates, second = serial: b'\x22\x01'
+class VideoWallModel(Field):
+    parse_len = 1
 
     def parse(self, data):
-        return parse_videowall(data)
+        return parse_videowall_model(data[0])
 
     def pack(self, data):
-        rv = tuple(int(x) for x in data.split(','))
-        if not len(rv) == 3 or rv[0] * rv[1] > 90 or rv[2] > 90:
+        if isinstance(data, str):
+            rv = tuple(int(x) for x in data.split(','))
+        elif not isinstance(data, (tuple, list)):
+            raise TypeError('Video wall model must be Tuple[int, int] or'
+                            'comma-separated string')
+        if not len(rv) == 2:
             raise ValueError('Invalid video wall model', data)
-        return pack_videowall(rv)
+        return pack_videowall_model(rv)

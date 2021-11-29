@@ -2,7 +2,7 @@ from enum import Enum
 
 from .command import Command
 from .fields import (Enum as EnumField, Int, Bool, Str, Time12H, Time,
-                     DateTime, Bitmask, IPAddress, VideoWall)
+                     DateTime, Bitmask, IPAddress, VideoWallModel)
 from .utils import parse_enum_bitmask
 
 
@@ -612,12 +612,12 @@ class TIMER_15(Command):
 
     Note: This depends on product and will not work on older versions.
 
-    ON_TIME/OFF_TIME - Turn ON/OFF display at specific time of day
+    ON_TIME/OFF_TIME: turn ON/OFF display at specific time of day
 
-    ON_ACTIVE/OFF_ACTIVE - If timer is not active, values are ignored,
+    ON_ACTIVE/OFF_ACTIVE: if timer is not active, values are ignored,
     so there may be only OFF timer, ON timer, or both.
 
-    REPEAT - On which day timer is enabled
+    REPEAT: On which day timer is enabled
     (combined with HOLIDAY_APPLY and MANUAL_WEEKDAY)
     """
     CMD = Int('TIMER_ID', range(1, 8))
@@ -1061,14 +1061,15 @@ class RGB(Command):
     ]
 
 
-class VIDEO_WALL_ENABLE(Command):
+class VIDEO_WALL_STATE(Command):
     """
-    Get or set the device in VIDEO WALL state.
-    This will split the primary input source into smaller N number of squares and display them
-    instead.
+    Get or set the device in video wall state.
+    This will split the primary input source into smaller N number of squares
+    and display them instead.
 
-    Note: The device needs to be capable of this operation. Usually a primary high resolution source signal
-    is daisy chained to lower resolution displays in a video wall using HDMI/DP.
+    Note: The device needs to be capable of this operation.
+    Usually a primary high resolution source signal is daisy chained
+    to lower resolution displays in a video wall using HDMI/DP.
     """
     CMD = 0x84
     GET, SET = True, True
@@ -1076,39 +1077,42 @@ class VIDEO_WALL_ENABLE(Command):
     class VIDEO_WALL_STATE(Enum):
         OFF = 0x00
         ON = 0x01
+
     DATA = [VIDEO_WALL_STATE]
 
 
 class VIDEO_WALL_MODE(Command):
     """
-    Get or set the device in aspect ratio of the VIDEO WALL.
+    Get or set the device in aspect ratio of the video wall.
 
     FULL: stretch input source to fill display
+
     NATURAL: Keep aspect ratio of input source; do not fill display.
 
-    Note: Needs VIDEO_WALL_ENABLE to be ON.
+    Note: Needs VIDEO_WALL_STATE to be ON.
     """
     CMD = 0x5C
     GET, SET = True, True
 
-    class VIDEO_WALL_MODE_SET(Enum):
+    class VIDEO_WALL_MODE(Enum):
         NATURAL = 0x00
         FULL = 0x01
-    DATA = [VIDEO_WALL_MODE_SET]
+
+    DATA = [VIDEO_WALL_MODE]
+
 
 class VIDEO_WALL_MODEL(Command):
     """
-    Get or set VIDEO WALL MODEL.
+    Get or set video wall model.
 
-    MODEL: Size of the wall in x/y coordinates; ie. 2,2 or 4,1 and the serial number (s):\n
+    MODEL: Size of the wall in (x, y) coordinates; ie. "2,2" or "4,1"
 
-    x,y,s
+    SERIAL: Serial number - position of the display in the video wall,
+    counting from the first display.
 
-    Note: The SERIAL, or position of the display in the video wall, counting from the first display
-
-    Note: Needs VIDEO_WALL_ENABLE to be ON.
+    Note: Needs VIDEO_WALL_STATE to be ON.
     """
     CMD = 0x89
     GET, SET = True, True
 
-    DATA = [VideoWall('MODEL')]
+    DATA = [VideoWallModel('MODEL'), Int('SERIAL', range(1, 256))]
