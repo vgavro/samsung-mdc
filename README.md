@@ -6,7 +6,7 @@ It allows you to control a variety of different sources (TV, Monitor) through th
 
 [MDC Protocol specification - v15.0 2020-11-06](https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf)
 
-* Implemented *67* commands
+* Implemented *70* commands
 * Easy to extend using simple declarative API - see [samsung_mdc/commands.py](https://github.com/vgavro/samsung-mdc/blob/master/samsung_mdc/commands.py)
 * Detailed [CLI](#usage) help and parameters validation
 * Run commands async on numerous targets (using asyncio)
@@ -126,6 +126,7 @@ Options:
 * [auto_lamp](#auto_lamp) `[MAX_TIME MAX_LAMP_VALUE MIN_TIME MIN_LAMP_VALUE]`
 * [manual_lamp](#manual_lamp) `[LAMP_VALUE]`
 * [inverse](#inverse) `[INVERSE_STATE]`
+* [video_wall_mode](#video_wall_mode) `[VIDEO_WALL_MODE]`
 * [safety_lock](#safety_lock) `[LOCK_STATE]`
 * [panel_lock](#panel_lock) `[LOCK_STATE]`
 * [channel_change](#channel_change) `CHANGE_TO`
@@ -133,6 +134,8 @@ Options:
 * [device_name](#device_name) `(DEVICE_NAME)`
 * [osd](#osd) `[OSD_ENABLED]`
 * [all_keys_lock](#all_keys_lock) `[LOCK_STATE]`
+* [video_wall_state](#video_wall_state) `[VIDEO_WALL_STATE]`
+* [video_wall_model](#video_wall_model) `[MODEL SERIAL]`
 * [model_name](#model_name) `(MODEL_NAME)`
 * [energy_saving](#energy_saving) `[ENERGY_SAVING_STATE]`
 * [reset](#reset) `RESET_TARGET`
@@ -515,6 +518,21 @@ Usage: samsung-mdc [OPTIONS] TARGET inverse [INVERSE_STATE]
 Data:
   INVERSE_STATE  OFF | ON
 ```
+#### video_wall_mode<a id="video_wall_mode"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET video_wall_mode [VIDEO_WALL_MODE]
+
+  Get or set the device in aspect ratio of the video wall.
+
+  FULL: stretch input source to fill display
+
+  NATURAL: Keep aspect ratio of input source; do not fill display.
+
+  Note: Needs VIDEO_WALL_STATE to be ON.
+
+Data:
+  VIDEO_WALL_MODE  NATURAL | FULL
+```
 #### safety_lock<a id="safety_lock"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET safety_lock [LOCK_STATE]
@@ -572,6 +590,37 @@ Usage: samsung-mdc [OPTIONS] TARGET all_keys_lock [LOCK_STATE]
 
 Data:
   LOCK_STATE  OFF | ON
+```
+#### video_wall_state<a id="video_wall_state"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET video_wall_state [VIDEO_WALL_STATE]
+
+  Get or set the device in video wall state. This will split the primary input
+  source into smaller N number of squares and display them instead.
+
+  Note: The device needs to be capable of this operation. Usually a primary
+  high resolution source signal is daisy chained to lower resolution displays
+  in a video wall using HDMI/DP.
+
+Data:
+  VIDEO_WALL_STATE  OFF | ON
+```
+#### video_wall_model<a id="video_wall_model"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET video_wall_model [MODEL SERIAL]
+
+  Get or set video wall model.
+
+  MODEL: Size of the wall in (x, y) coordinates; ie. "2,2" or "4,1"
+
+  SERIAL: Serial number - position of the display in the video wall, counting
+  from the first display.
+
+  Note: Needs VIDEO_WALL_STATE to be ON.
+
+Data:
+  MODEL   Video Wall model (format: X,Y eg. 4,5)
+  SERIAL  int (1-255)
 ```
 #### model_name<a id="model_name"></a>
 ```
@@ -644,12 +693,12 @@ Usage: samsung-mdc [OPTIONS] TARGET timer_15 TIMER_ID [ON_TIME ON_ENABLED
 
   Note: This depends on product and will not work on older versions.
 
-  ON_TIME/OFF_TIME - Turn ON/OFF display at specific time of day
+  ON_TIME/OFF_TIME: turn ON/OFF display at specific time of day
 
-  ON_ACTIVE/OFF_ACTIVE - If timer is not active, values are ignored, so there
+  ON_ACTIVE/OFF_ACTIVE: if timer is not active, values are ignored, so there
   may be only OFF timer, ON timer, or both.
 
-  REPEAT - On which day timer is enabled (combined with HOLIDAY_APPLY and
+  REPEAT: On which day timer is enabled (combined with HOLIDAY_APPLY and
   MANUAL_WEEKDAY)
 
 Data:
