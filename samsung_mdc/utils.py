@@ -65,4 +65,4 @@ def pack_videowall_model(value):
     """
     Converts (x, y) tuple to one coordinates byte (with y, x representation)
     """
-    return (value[0] * 16) + value[1]
+    return [(value[1] * 16) + value[0]]
