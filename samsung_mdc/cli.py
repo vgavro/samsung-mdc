@@ -571,16 +571,18 @@ command1 [ARGS]...
 command2 [ARGS]...
 
 \b
-Example: samsung-mdc ./targets.txt script -s 3 -r 1 ./commands.txt
+Example: samsung-mdc ./targets.txt script -s 3 -r 1 -v KEY enter ./commands.txt
 # commands.txt content
 power on
 sleep 5
 clear_menu
 virtual_remote key_menu
 virtual_remote key_down
-virtual_remote enter
+virtual_remote {{ KEY }}
 clear_menu
 """
+
+VAR_TEMPLATE = re.compile(r'{{\s*(.*?)\s*}}')
 
 
 @cli.command(help=SCRIPT_HELP, cls=FixedSubcommand)
@@ -596,20 +598,24 @@ clear_menu
               help='Sleep before script retry (seconds)')
 @click.option('--ignore-nak', is_flag=True,
               help='Ignore negative acknowledgement errors')
+@click.option('--var', '-v', multiple=True, nargs=2, type=(str, str),
+              help='Variable "{{ NAME }}" in script will be replaced by VALUE',
+              metavar='NAME VALUE')
 @click.argument('script_file', type=click.File(),
                 help='Text file with commands, separated by newline.',
                 cls=ArgumentWithHelp)
 @click.pass_context
 def script(ctx, script_file, sleep, retry_command, retry_command_sleep,
-           retry_script, retry_script_sleep, ignore_nak):
+           retry_script, retry_script_sleep, ignore_nak, var):
     import shlex
 
+    var = dict(var)
     retry_command_sleep = retry_command_sleep or sleep
     retry_script_sleep = retry_script_sleep or sleep
 
     def fail(lineno, line, reason):
         raise click.UsageError(
-            f'{script_file.name}:{lineno}: "{line}": {reason}')
+            f'{script_file.name}:{lineno}:"{line}": {reason}')
 
     def create_disconnect():
         async def disconnect(connection, display_id):
@@ -630,10 +636,22 @@ def script(ctx, script_file, sleep, retry_command, retry_command_sleep,
     lines = [
         (i + 1, line.strip())
         for i, line in enumerate(script_file.read().split('\n'))
-        if line.strip() and not line.strip().startswith('#')
     ]
     calls = []
     for lineno, line in lines:
+        if not line or line.startswith('#'):
+            continue
+
+        var_match = VAR_TEMPLATE.search(line)
+        while var_match:
+            var_name = var_match.groups()[0]
+            var_value = var.get(var_name)
+            if var_value is None:
+                fail(lineno, line, f'Unknown variable: {var_name}')
+            line = (line[0:var_match.start()] +
+                    var_value + line[var_match.end():])
+            var_match = VAR_TEMPLATE.search(line)
+
         command, *args = shlex.split(line)
         command = command.lower()
         if (command not in cli.commands

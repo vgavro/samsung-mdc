@@ -921,14 +921,14 @@ Usage: samsung-mdc [OPTIONS] TARGET script [OPTIONS] SCRIPT_FILE
   command1 [ARGS]...
   command2 [ARGS]...
 
-  Example: samsung-mdc ./targets.txt script -s 3 -r 1 ./commands.txt
+  Example: samsung-mdc ./targets.txt script -s 3 -r 1 -v KEY enter ./commands.txt
   # commands.txt content
   power on
   sleep 5
   clear_menu
   virtual_remote key_menu
   virtual_remote key_down
-  virtual_remote enter
+  virtual_remote {{ KEY }}
   clear_menu
 
 Arguments:
@@ -941,6 +941,8 @@ Options:
   -r, --retry-script INTEGER   Retry script if failed (count)
   --retry-script-sleep FLOAT   Sleep before script retry (seconds)
   --ignore-nak                 Ignore negative acknowledgement errors
+  -v, --var NAME VALUE         Variable "{{ NAME }}" in script will be
+                               replaced by VALUE
   --help                       Show this message and exit.
 ```
 #### raw<a id="raw"></a>
