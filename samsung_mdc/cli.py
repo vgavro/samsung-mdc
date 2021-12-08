@@ -558,6 +558,9 @@ Commands for multiple targets will be running async, but
 commands order is preserved for device (and is running on same connection),
 exit on first fail unless retry options provided.
 
+You may use jinja2 templating engine to {% include "other_script" %}
+or {{ VAR_KEY }} rendering in combination with --var VAR_KEY VAR_VALUE options.
+
 It\'s highly recommended to use sleep option for virtual_remote!
 
 \b
@@ -581,8 +584,6 @@ virtual_remote key_down
 virtual_remote {{ KEY }}
 clear_menu
 """
-
-VAR_TEMPLATE = re.compile(r'{{\s*(.*?)\s*}}')
 
 
 @cli.command(help=SCRIPT_HELP, cls=FixedSubcommand)
@@ -612,6 +613,20 @@ def script(ctx, script_file, sleep, retry_command, retry_command_sleep,
     var = dict(var)
     retry_command_sleep = retry_command_sleep or sleep
     retry_script_sleep = retry_script_sleep or sleep
+    script_content = script_file.read()
+
+    if var or '{{' in script_content or '{%' in script_content:
+        from jinja2 import Environment, FileSystemLoader, StrictUndefined
+
+        class RelativeEnvironment(Environment):
+            def join_path(self, template, parent):
+                # Allowing include based on path relative to script
+                return os.path.join(os.path.dirname(parent), template)
+
+        env = RelativeEnvironment(loader=FileSystemLoader(['/', './']),
+                                  undefined=StrictUndefined)
+        template = env.get_template(script_file.name)
+        script_content = template.render(**var)
 
     def fail(lineno, line, reason):
         raise click.UsageError(
@@ -635,22 +650,12 @@ def script(ctx, script_file, sleep, retry_command, retry_command_sleep,
 
     lines = [
         (i + 1, line.strip())
-        for i, line in enumerate(script_file.read().split('\n'))
+        for i, line in enumerate(script_content.splitlines())
     ]
     calls = []
     for lineno, line in lines:
         if not line or line.startswith('#'):
             continue
-
-        var_match = VAR_TEMPLATE.search(line)
-        while var_match:
-            var_name = var_match.groups()[0]
-            var_value = var.get(var_name)
-            if var_value is None:
-                fail(lineno, line, f'Unknown variable: {var_name}')
-            line = (line[0:var_match.start()] +
-                    var_value + line[var_match.end():])
-            var_match = VAR_TEMPLATE.search(line)
 
         command, *args = shlex.split(line)
         command = command.lower()

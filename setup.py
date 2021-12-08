@@ -4,6 +4,7 @@ exec(open('samsung_mdc/version.py').read())
 
 requires = [
     'click',  # tested: click >=7,<=8
+    'jinja2',
     'pyserial-asyncio'  # tested: pyserial==3.5; pyserial-asyncio==0.5
 ]
 

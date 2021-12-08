@@ -911,6 +911,9 @@ Usage: samsung-mdc [OPTIONS] TARGET script [OPTIONS] SCRIPT_FILE
   preserved for device (and is running on same connection), exit on first fail
   unless retry options provided.
 
+  You may use jinja2 templating engine to {% include "other_script" %} or {{
+  VAR_KEY }} rendering in combination with --var VAR_KEY VAR_VALUE options.
+
   It's highly recommended to use sleep option for virtual_remote!
 
   Additional commands:
