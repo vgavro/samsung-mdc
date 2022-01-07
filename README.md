@@ -561,6 +561,28 @@ Usage: samsung-mdc [OPTIONS] TARGET volume_change CHANGE_TO
 Data:
   CHANGE_TO  UP | DOWN
 ```
+#### ticker<a id="ticker"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET ticker TICKER_ON_OFF START_TIME END_TIME POS_HORIZ POS_VERT MOTION_ON_OFF MOTION_DIR MOTION_SPEED FONT_SIZE FOREGROUND_COLOR BACKGROUND_COLOR FOREGROUND_OPACITY BACKGROUND_OPACITY MESSAGE
+
+  Update the device ticker. (Show text message overlay on the screen)
+
+Data:
+  TICKER_ON_OFF       bool
+  START_TIME          time (format: %H:%M:%S)
+  END_TIME            time (format: %H:%M:%S)
+  POS_HORIZ           CENTER | LEFT | RIGHT 
+  POS_VERT            MIDDLE | TOP | BOTTOM 
+  MOTION_ON_OFF       bool
+  MOTION_DIR          LEFT | RIGHT | UP | DOWN
+  MOTION_SPEED        NORMAL | SLOW | FAST
+  FONT_SIZE           STANDARD | SMALL | LARGE
+  FOREGROUND_COLOR    BLACK | WHITE | RED | GREEN | BLUE | YELLOW | MAGENTA | CYAN
+  BACKGROUND_COLOR    BLACK | WHITE | RED | GREEN | BLUE | YELLOW | MAGENTA | CYAN
+  FOREGROUND_OPACITY  FLASHING | FLASH_ALL | OFF
+  BACKGROUND_OPACITY  SOLID | TRANSPARENT | TRANSLUCENT
+  MESSAGE             str
+```
 #### device_name<a id="device_name"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET device_name
