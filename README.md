@@ -6,7 +6,7 @@ It allows you to control a variety of different sources (TV, Monitor) through th
 
 [MDC Protocol specification - v15.0 2020-11-06](https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf)
 
-* Implemented *70* commands
+* Implemented *71* commands
 * Easy to extend using simple declarative API - see [samsung_mdc/commands.py](https://github.com/vgavro/samsung-mdc/blob/master/samsung_mdc/commands.py)
 * Detailed [CLI](#usage) help and parameters validation
 * Run commands async on numerous targets (using asyncio)
@@ -131,6 +131,7 @@ Options:
 * [panel_lock](#panel_lock) `[LOCK_STATE]`
 * [channel_change](#channel_change) `CHANGE_TO`
 * [volume_change](#volume_change) `CHANGE_TO`
+* [ticker](#ticker) `[TICKER_ON_OFF START_TIME END_TIME POS_HORIZ POS_VERT MOTION_ON_OFF MOTION_DIR MOTION_SPEED FONT_SIZE FOREGROUND_COLOR BACKGROUND_COLOR FOREGROUND_OPACITY BACKGROUND_OPACITY MESSAGE]`
 * [device_name](#device_name) `(DEVICE_NAME)`
 * [osd](#osd) `[OSD_ENABLED]`
 * [all_keys_lock](#all_keys_lock) `[LOCK_STATE]`
@@ -563,9 +564,9 @@ Data:
 ```
 #### ticker<a id="ticker"></a>
 ```
-Usage: samsung-mdc [OPTIONS] TARGET ticker TICKER_ON_OFF START_TIME END_TIME POS_HORIZ POS_VERT MOTION_ON_OFF MOTION_DIR MOTION_SPEED FONT_SIZE FOREGROUND_COLOR BACKGROUND_COLOR FOREGROUND_OPACITY BACKGROUND_OPACITY MESSAGE
+Usage: samsung-mdc [OPTIONS] TARGET ticker [TICKER_ON_OFF START_TIME END_TIME POS_HORIZ POS_VERT MOTION_ON_OFF MOTION_DIR MOTION_SPEED FONT_SIZE FOREGROUND_COLOR BACKGROUND_COLOR FOREGROUND_OPACITY BACKGROUND_OPACITY MESSAGE]
 
-  Update the device ticker. (Show text message overlay on the screen)
+  Get/set the device ticker. (Show text message overlay on the screen)
 
 Data:
   TICKER_ON_OFF       bool
