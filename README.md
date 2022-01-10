@@ -6,7 +6,7 @@ It allows you to control a variety of different sources (TV, Monitor) through th
 
 [MDC Protocol specification - v15.0 2020-11-06](https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf)
 
-* Implemented *70* commands
+* Implemented *71* commands
 * Easy to extend using simple declarative API - see [samsung_mdc/commands.py](https://github.com/vgavro/samsung-mdc/blob/master/samsung_mdc/commands.py)
 * Detailed [CLI](#usage) help and parameters validation
 * Run commands async on numerous targets (using asyncio)
@@ -131,6 +131,7 @@ Options:
 * [panel_lock](#panel_lock) `[LOCK_STATE]`
 * [channel_change](#channel_change) `CHANGE_TO`
 * [volume_change](#volume_change) `CHANGE_TO`
+* [ticker](#ticker) `[ON_OFF START_TIME END_TIME POS_HORIZ POS_VERTI MOTION_ON_OFF MOTION_DIR MOTION_SPEED FONT_SIZE FOREGROUND_COLOR BACKGROUND_COLOR FOREGROUND_OPACITY BACKGROUND_OPACITY MESSAGE]`
 * [device_name](#device_name) `(DEVICE_NAME)`
 * [osd](#osd) `[OSD_ENABLED]`
 * [all_keys_lock](#all_keys_lock) `[LOCK_STATE]`
@@ -560,6 +561,36 @@ Usage: samsung-mdc [OPTIONS] TARGET volume_change CHANGE_TO
 
 Data:
   CHANGE_TO  UP | DOWN
+```
+#### ticker<a id="ticker"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET ticker [ON_OFF START_TIME END_TIME
+                   POS_HORIZ POS_VERTI MOTION_ON_OFF MOTION_DIR MOTION_SPEED
+                   FONT_SIZE FOREGROUND_COLOR BACKGROUND_COLOR
+                   FOREGROUND_OPACITY BACKGROUND_OPACITY MESSAGE]
+
+  Get/set the device ticker. (Show text message overlay on the screen)
+
+  Note: POS_HORIZ or POS_VERT are NONE in GET response if unsupported by the
+  display.
+
+Data:
+  ON_OFF              bool
+  START_TIME          time (format: %H:%M:%S)
+  END_TIME            time (format: %H:%M:%S)
+  POS_HORIZ           CENTER | LEFT | RIGHT | NONE
+  POS_VERTI           MIDDLE | TOP | BOTTOM | NONE
+  MOTION_ON_OFF       bool
+  MOTION_DIR          LEFT | RIGHT | UP | DOWN
+  MOTION_SPEED        NORMAL | SLOW | FAST
+  FONT_SIZE           STANDARD | SMALL | LARGE
+  FOREGROUND_COLOR    BLACK | WHITE | RED | GREEN | BLUE | YELLOW | MAGENTA |
+                      CYAN
+  BACKGROUND_COLOR    BLACK | WHITE | RED | GREEN | BLUE | YELLOW | MAGENTA |
+                      CYAN
+  FOREGROUND_OPACITY  FLASHING | FLASH_ALL | OFF
+  BACKGROUND_OPACITY  SOLID | TRANSPARENT | TRANSLUCENT | UNKNOWN
+  MESSAGE             str
 ```
 #### device_name<a id="device_name"></a>
 ```

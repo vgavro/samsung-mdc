@@ -512,6 +512,90 @@ class VOLUME_CHANGE(Command):
 
     DATA = [CHANGE_TO]
 
+class TICKER(Command):
+    """
+    Get/set the device ticker. (Show text message overlay on the screen)
+
+    Note: POS_HORIZ or POS_VERT are NONE in GET response if unsupported by the display.
+    """
+    CMD = 0x63
+    GET, SET = True, True
+
+    class POS_HORIZ(Enum):
+        CENTER = 0x00
+        LEFT = 0x01
+        RIGHT = 0x02
+        NONE = 0xFF
+
+    class POS_VERTI(Enum):
+        MIDDLE = 0x00
+        TOP = 0x01
+        BOTTOM = 0x02
+        NONE = 0xFF
+
+    class MOTION_DIR(Enum):
+        LEFT = 0x00
+        RIGHT = 0x01
+        UP = 0x02
+        DOWN = 0x03
+
+    class MOTION_SPEED(Enum):
+        NORMAL = 0x00
+        SLOW = 0x01
+        FAST = 0x02
+
+    class FONT_SIZE(Enum):
+        STANDARD = 0x00
+        SMALL = 0x01
+        LARGE = 0x02
+
+    class FOREGROUND_COLOR(Enum):
+        BLACK = 0x00
+        WHITE = 0x01
+        RED = 0x02
+        GREEN = 0x03
+        BLUE = 0x04
+        YELLOW = 0x05
+        MAGENTA = 0x06
+        CYAN = 0x07
+
+    class BACKGROUND_COLOR(Enum):
+        BLACK = 0x00
+        WHITE = 0x01
+        RED = 0x02
+        GREEN = 0x03
+        BLUE = 0x04
+        YELLOW = 0x05
+        MAGENTA = 0x06
+        CYAN = 0x07
+
+    class FOREGROUND_OPACITY(Enum):
+        FLASHING = 0x03
+        FLASH_ALL = 0x04
+        OFF = 0x05
+
+    class BACKGROUND_OPACITY(Enum):
+        SOLID = 0x00
+        TRANSPARENT = 0x01
+        TRANSLUCENT = 0x02
+        UNKNOWN = 0x03
+
+    DATA = [
+        Bool('ON_OFF'),
+        Time12H('START_TIME'),
+        Time12H('END_TIME'),
+        POS_HORIZ,
+        POS_VERTI,
+        Bool('MOTION_ON_OFF'),
+        MOTION_DIR,
+        MOTION_SPEED,
+        FONT_SIZE,
+        FOREGROUND_COLOR,
+        BACKGROUND_COLOR,
+        FOREGROUND_OPACITY,
+        BACKGROUND_OPACITY,
+        Str('MESSAGE')
+    ]
 
 class DEVICE_NAME(Command):
     """
