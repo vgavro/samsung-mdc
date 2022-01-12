@@ -86,12 +86,17 @@ class Time12H(Field):
 
 
 class Time(Field):
-    parse_len = 2
+    def __init__(self, name=None, seconds=False):
+        self.seconds = seconds
+        self.parse_len = 3 if seconds else 2
+        super().__init__(name)
 
     def parse(self, data):
-        return time(data[0], data[1])
+        return time(data[0], data[1], data[3] if self.seconds else 0)
 
     def pack(self, data):
+        if self.seconds:
+            return (data.hour, data.minute, data.second)
         return (data.hour, data.minute)
 
 

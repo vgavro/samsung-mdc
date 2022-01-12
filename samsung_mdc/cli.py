@@ -280,15 +280,22 @@ class MDCClickCommand(FixedSubcommand):
             type = EnumChoice(field.enum)
             help = ' | '.join(field.enum.__members__.keys())
         elif isinstance(field, fields.DateTime):
-            formats = [
-                "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S",
-                "%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M",
-            ]
+            if field.seconds:
+                formats = [
+                    "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S",
+                ]
+            else:
+                formats = [
+                    "%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M",
+                ]
             type = click.DateTime(formats)
             help = f'datetime (format: {" / ".join(formats)})'
         elif isinstance(field, (fields.Time, fields.Time12H)):
             type = Time()
-            help = 'time (format: %H:%M:%S)'
+            if isinstance(field, fields.Time12H) or not field.seconds:
+                help = 'time (format: %H:%M)'
+            else:
+                help = 'time (format: %H:%M:%S)'
         elif isinstance(field, fields.IPAddress):
             type = str
             help = 'IP address'

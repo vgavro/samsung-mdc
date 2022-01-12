@@ -339,7 +339,7 @@ Usage: samsung-mdc [OPTIONS] TARGET weekly_restart [WEEKDAY TIME]
 
 Data:
   WEEKDAY  list(,) SUN | SAT | FRI | THU | WED | TUE | MON
-  TIME     time (format: %H:%M:%S)
+  TIME     time (format: %H:%M)
 ```
 #### magicinfo_server<a id="magicinfo_server"></a>
 ```
@@ -495,9 +495,9 @@ Usage: samsung-mdc [OPTIONS] TARGET auto_lamp [MAX_TIME MAX_LAMP_VALUE
   turn off.
 
 Data:
-  MAX_TIME        time (format: %H:%M:%S)
+  MAX_TIME        time (format: %H:%M)
   MAX_LAMP_VALUE  int (0-100)
-  MIN_TIME        time (format: %H:%M:%S)
+  MIN_TIME        time (format: %H:%M)
   MIN_LAMP_VALUE  int (0-100)
 ```
 #### manual_lamp<a id="manual_lamp"></a>
@@ -576,8 +576,8 @@ Usage: samsung-mdc [OPTIONS] TARGET ticker [ON_OFF START_TIME END_TIME
 
 Data:
   ON_OFF              bool
-  START_TIME          time (format: %H:%M:%S)
-  END_TIME            time (format: %H:%M:%S)
+  START_TIME          time (format: %H:%M)
+  END_TIME            time (format: %H:%M)
   POS_HORIZ           CENTER | LEFT | RIGHT | NONE
   POS_VERTI           MIDDLE | TOP | BOTTOM | NONE
   MOTION_ON_OFF       bool
@@ -696,9 +696,9 @@ Usage: samsung-mdc [OPTIONS] TARGET timer_13 TIMER_ID [ON_TIME ON_ENABLED
 
 Data:
   TIMER_ID            int (1-7)
-  ON_TIME             time (format: %H:%M:%S)
+  ON_TIME             time (format: %H:%M)
   ON_ENABLED          bool
-  OFF_TIME            time (format: %H:%M:%S)
+  OFF_TIME            time (format: %H:%M)
   OFF_ENABLED         bool
   REPEAT              ONCE | EVERYDAY | MON_FRI | MON_SAT | SAT_SUN |
                       MANUAL_WEEKDAY
@@ -734,9 +734,9 @@ Usage: samsung-mdc [OPTIONS] TARGET timer_15 TIMER_ID [ON_TIME ON_ENABLED
 
 Data:
   TIMER_ID            int (1-7)
-  ON_TIME             time (format: %H:%M:%S)
+  ON_TIME             time (format: %H:%M)
   ON_ENABLED          bool
-  OFF_TIME            time (format: %H:%M:%S)
+  OFF_TIME            time (format: %H:%M)
   OFF_ENABLED         bool
   ON_REPEAT           ONCE | EVERYDAY | MON_FRI | MON_SAT | SAT_SUN |
                       MANUAL_WEEKDAY
@@ -765,8 +765,7 @@ Usage: samsung-mdc [OPTIONS] TARGET clock_m [DATETIME]
   function (seconds precision).
 
 Data:
-  DATETIME  datetime (format: %Y-%m-%dT%H:%M:%S / %Y-%m-%d %H:%M:%S /
-            %Y-%m-%dT%H:%M / %Y-%m-%d %H:%M)
+  DATETIME  datetime (format: %Y-%m-%dT%H:%M / %Y-%m-%d %H:%M)
 ```
 #### holiday_set<a id="holiday_set"></a>
 ```
@@ -841,12 +840,12 @@ Data:
                  NOV | DEC
   START_WEEK     WEEK_1 | WEEK_2 | WEEK_3 | WEEK_4 | WEEK_LAST
   START_WEEKDAY  SUN | MON | TUE | WED | THU | FRI | SAT
-  START_TIME     time (format: %H:%M:%S)
+  START_TIME     time (format: %H:%M)
   END_MONTH      JAN | FEB | MAR | APR | MAY | JUN | JUL | AUG | SEP | OCT |
                  NOV | DEC
   END_WEEK       WEEK_1 | WEEK_2 | WEEK_3 | WEEK_4 | WEEK_LAST
   END_WEEKDAY    SUN | MON | TUE | WED | THU | FRI | SAT
-  END_TIME       time (format: %H:%M:%S)
+  END_TIME       time (format: %H:%M)
   OFFSET         PLUS_1_00 | PLUS_2_00
 
 Response extra:
@@ -876,8 +875,7 @@ Usage: samsung-mdc [OPTIONS] TARGET clock_s [DATETIME]
   function (minute precision).
 
 Data:
-  DATETIME  datetime (format: %Y-%m-%dT%H:%M:%S / %Y-%m-%d %H:%M:%S /
-            %Y-%m-%dT%H:%M / %Y-%m-%d %H:%M)
+  DATETIME  datetime (format: %Y-%m-%dT%H:%M:%S / %Y-%m-%d %H:%M:%S)
 ```
 #### launcher_play_via<a id="launcher_play_via"></a>
 ```
