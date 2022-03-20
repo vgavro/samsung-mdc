@@ -6,7 +6,7 @@ It allows you to control a variety of different sources (TV, Monitor) through th
 
 [MDC Protocol specification - v15.0 2020-11-06](https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf)
 
-* Implemented *71* commands
+* Implemented *72* commands
 * Easy to extend using simple declarative API - see [samsung_mdc/commands.py](https://github.com/vgavro/samsung-mdc/blob/master/samsung_mdc/commands.py)
 * Detailed [CLI](#usage) help and parameters validation
 * Run commands async on numerous targets (using asyncio)
@@ -135,6 +135,7 @@ Options:
 * [device_name](#device_name) `(DEVICE_NAME)`
 * [osd](#osd) `[OSD_ENABLED]`
 * [all_keys_lock](#all_keys_lock) `[LOCK_STATE]`
+* [panel_on_time](#panel_on_time) `(MIN10)`
 * [video_wall_state](#video_wall_state) `[VIDEO_WALL_STATE]`
 * [video_wall_model](#video_wall_model) `[MODEL SERIAL]`
 * [model_name](#model_name) `(MODEL_NAME)`
@@ -621,6 +622,17 @@ Usage: samsung-mdc [OPTIONS] TARGET all_keys_lock [LOCK_STATE]
 
 Data:
   LOCK_STATE  OFF | ON
+```
+#### panel_on_time<a id="panel_on_time"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET panel_on_time
+
+  Get the device panel on total time.
+
+  Return value increased every 10 mins. To get hours use "MIN10 / 6".
+
+Data:
+  MIN10  int
 ```
 #### video_wall_state<a id="video_wall_state"></a>
 ```

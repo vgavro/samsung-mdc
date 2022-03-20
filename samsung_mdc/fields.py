@@ -35,6 +35,20 @@ class Int(Field):
         return int(data[0])
 
 
+class IntHL(Field):
+    # Interger represented by high+low bytes
+    # https://stackoverflow.com/a/6090641/450103
+    parse_len = 2
+    range = None
+
+    def pack(self, value):
+        super().pack(self, value)  # validate range
+        return [(value >> 8) & 0xFF, value & 0xFF]
+
+    def parse(self, data):
+        return data[1] | (data[0] << 8)
+
+
 class Bool(Int):
     range = range(2)
 

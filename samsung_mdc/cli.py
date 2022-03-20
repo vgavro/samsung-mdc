@@ -307,6 +307,7 @@ class MDCClickCommand(FixedSubcommand):
                 fields.Str: str,
                 fields.Bool: bool,
                 fields.Int: int,
+                fields.IntHL: int,
             }[field.__class__]
             help = type.__name__.lower()
             if type is int and field.range:

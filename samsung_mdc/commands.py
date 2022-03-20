@@ -1,7 +1,7 @@
 from enum import Enum
 
 from .command import Command
-from .fields import (Enum as EnumField, Int, Bool, Str, Time12H, Time,
+from .fields import (Enum as EnumField, Int, IntHL, Bool, Str, Time12H, Time,
                      DateTime, Bitmask, IPAddress, VideoWallModel)
 from .utils import parse_enum_bitmask
 
@@ -512,11 +512,13 @@ class VOLUME_CHANGE(Command):
 
     DATA = [CHANGE_TO]
 
+
 class TICKER(Command):
     """
     Get/set the device ticker. (Show text message overlay on the screen)
 
-    Note: POS_HORIZ or POS_VERT are NONE in GET response if unsupported by the display.
+    Note: POS_HORIZ or POS_VERT are NONE in GET response
+    if unsupported by the display.
     """
     CMD = 0x63
     GET, SET = True, True
@@ -597,6 +599,7 @@ class TICKER(Command):
         Str('MESSAGE')
     ]
 
+
 class DEVICE_NAME(Command):
     """
     It reads the device name which user set up in network.
@@ -639,6 +642,21 @@ class MODEL_NAME(Command):
     CMD = 0x8A
     GET, SET = True, False
     DATA = [Str('MODEL_NAME')]
+
+
+class PANEL_ON_TIME(Command):
+    """
+    Get the device panel on total time.
+
+    Return value increased every 10 mins. To get hours use "MIN10 / 6".
+    """
+    CMD = 0x83
+    GET, SET = True, False
+    DATA = [IntHL('MIN10')]
+
+    @classmethod
+    def parse_response_data(cls, data):
+        return super().parse_response_data(data)[0]
 
 
 class ENERGY_SAVING(Command):
