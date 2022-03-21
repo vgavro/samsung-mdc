@@ -164,6 +164,7 @@ class PICTURE_ASPECT(Command):
         PC_4_3 = 0x18
         PC_ORIGINAL_RATIO = 0x20
         PC_21_9 = 0x21
+        PC_CUSTOM = 0x22
 
         VIDEO_AUTO_WIDE = 0x00
         VIDEO_16_9 = 0x01

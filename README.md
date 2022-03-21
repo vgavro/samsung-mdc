@@ -185,8 +185,8 @@ Data:
                         MEDIA_MAGIC_INFO_S | WIDI_SCREEN_MIRRORING |
                         INTERNAL_USB | URL_LAUNCHER | IWB
   PICTURE_ASPECT_STATE  PC_16_9 | PC_4_3 | PC_ORIGINAL_RATIO | PC_21_9 |
-                        VIDEO_AUTO_WIDE | VIDEO_16_9 | VIDEO_ZOOM |
-                        VIDEO_ZOOM_1 | VIDEO_ZOOM_2 | VIDEO_SCREEN_FIT |
+                        PC_CUSTOM | VIDEO_AUTO_WIDE | VIDEO_16_9 | VIDEO_ZOOM
+                        | VIDEO_ZOOM_1 | VIDEO_ZOOM_2 | VIDEO_SCREEN_FIT |
                         VIDEO_4_3 | VIDEO_WIDE_FIT | VIDEO_CUSTOM |
                         VIDEO_SMART_VIEW_1 | VIDEO_SMART_VIEW_2 |
                         VIDEO_WIDE_ZOOM | VIDEO_21_9
@@ -296,8 +296,8 @@ Usage: samsung-mdc [OPTIONS] TARGET picture_aspect [PICTURE_ASPECT_STATE]
 
 Data:
   PICTURE_ASPECT_STATE  PC_16_9 | PC_4_3 | PC_ORIGINAL_RATIO | PC_21_9 |
-                        VIDEO_AUTO_WIDE | VIDEO_16_9 | VIDEO_ZOOM |
-                        VIDEO_ZOOM_1 | VIDEO_ZOOM_2 | VIDEO_SCREEN_FIT |
+                        PC_CUSTOM | VIDEO_AUTO_WIDE | VIDEO_16_9 | VIDEO_ZOOM
+                        | VIDEO_ZOOM_1 | VIDEO_ZOOM_2 | VIDEO_SCREEN_FIT |
                         VIDEO_4_3 | VIDEO_WIDE_FIT | VIDEO_CUSTOM |
                         VIDEO_SMART_VIEW_1 | VIDEO_SMART_VIEW_2 |
                         VIDEO_WIDE_ZOOM | VIDEO_21_9
