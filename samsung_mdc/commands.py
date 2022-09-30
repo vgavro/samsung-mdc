@@ -150,7 +150,7 @@ class INPUT_SOURCE(Command):
         WIDI_SCREEN_MIRRORING = 0x61
         INTERNAL_USB = 0x62
         URL_LAUNCHER = 0x63
-        IWB = 0x64
+        IWB = 0x65
 
     DATA = [INPUT_SOURCE_STATE]
 
