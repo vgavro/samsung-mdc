@@ -151,6 +151,7 @@ class INPUT_SOURCE(Command):
         INTERNAL_USB = 0x62
         URL_LAUNCHER = 0x63
         IWB = 0x64
+        WEB_BROWSER = 0x65
 
     DATA = [INPUT_SOURCE_STATE]
 

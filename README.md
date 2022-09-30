@@ -288,7 +288,7 @@ Data:
                       DISPLAY_PORT_3 | RF_TV | HDMI3 | HDMI3_PC | HDMI4 |
                       HDMI4_PC | TV_DTV | PLUG_IN_MODE | HD_BASE_T |
                       MEDIA_MAGIC_INFO_S | WIDI_SCREEN_MIRRORING |
-                      INTERNAL_USB | URL_LAUNCHER | IWB
+                      INTERNAL_USB | URL_LAUNCHER | IWB | WEB_BROWSER
 ```
 #### picture_aspect<a id="picture_aspect"></a>
 ```
