@@ -183,7 +183,7 @@ Data:
                         DISPLAY_PORT_3 | RF_TV | HDMI3 | HDMI3_PC | HDMI4 |
                         HDMI4_PC | TV_DTV | PLUG_IN_MODE | HD_BASE_T |
                         MEDIA_MAGIC_INFO_S | WIDI_SCREEN_MIRRORING |
-                        INTERNAL_USB | URL_LAUNCHER | IWB
+                        INTERNAL_USB | URL_LAUNCHER | IWB | WEB_BROWSER
   PICTURE_ASPECT_STATE  PC_16_9 | PC_4_3 | PC_ORIGINAL_RATIO | PC_21_9 |
                         PC_CUSTOM | VIDEO_AUTO_WIDE | VIDEO_16_9 | VIDEO_ZOOM
                         | VIDEO_ZOOM_1 | VIDEO_ZOOM_2 | VIDEO_SCREEN_FIT |
@@ -722,7 +722,7 @@ Data:
                       DISPLAY_PORT_3 | RF_TV | HDMI3 | HDMI3_PC | HDMI4 |
                       HDMI4_PC | TV_DTV | PLUG_IN_MODE | HD_BASE_T |
                       MEDIA_MAGIC_INFO_S | WIDI_SCREEN_MIRRORING |
-                      INTERNAL_USB | URL_LAUNCHER | IWB
+                      INTERNAL_USB | URL_LAUNCHER | IWB | WEB_BROWSER
   HOLIDAY_APPLY       DONT_APPLY_BOTH | APPLY_BOTH | ON_TIMER_ONLY_APPLY |
                       OFF_TIMER_ONLY_APPLY
 ```
@@ -763,7 +763,7 @@ Data:
                       DISPLAY_PORT_3 | RF_TV | HDMI3 | HDMI3_PC | HDMI4 |
                       HDMI4_PC | TV_DTV | PLUG_IN_MODE | HD_BASE_T |
                       MEDIA_MAGIC_INFO_S | WIDI_SCREEN_MIRRORING |
-                      INTERNAL_USB | URL_LAUNCHER | IWB
+                      INTERNAL_USB | URL_LAUNCHER | IWB | WEB_BROWSER
   HOLIDAY_APPLY       DONT_APPLY_BOTH | APPLY_BOTH | ON_TIMER_ONLY_APPLY |
                       OFF_TIMER_ONLY_APPLY
 ```
@@ -925,7 +925,7 @@ Data:
                            HDMI3_PC | HDMI4 | HDMI4_PC | TV_DTV | PLUG_IN_MODE
                            | HD_BASE_T | MEDIA_MAGIC_INFO_S |
                            WIDI_SCREEN_MIRRORING | INTERNAL_USB | URL_LAUNCHER
-                           | IWB
+                           | IWB | WEB_BROWSER
   SECONDARY_SOURCE         NONE | S_VIDEO | COMPONENT | AV | AV2 | SCART1 |
                            DVI | PC | BNC | DVI_VIDEO | MAGIC_INFO | HDMI1 |
                            HDMI1_PC | HDMI2 | HDMI2_PC | DISPLAY_PORT_1 |
@@ -933,7 +933,7 @@ Data:
                            HDMI3_PC | HDMI4 | HDMI4_PC | TV_DTV | PLUG_IN_MODE
                            | HD_BASE_T | MEDIA_MAGIC_INFO_S |
                            WIDI_SCREEN_MIRRORING | INTERNAL_USB | URL_LAUNCHER
-                           | IWB
+                           | IWB | WEB_BROWSER
 ```
 #### panel<a id="panel"></a>
 ```
