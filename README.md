@@ -6,7 +6,7 @@ It allows you to control a variety of different sources (TV, Monitor) through th
 
 [MDC Protocol specification - v15.0 2020-11-06](https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf)
 
-* Implemented *72* commands
+* Implemented *74* commands
 * Easy to extend using simple declarative API - see [samsung_mdc/commands.py](https://github.com/vgavro/samsung-mdc/blob/master/samsung_mdc/commands.py)
 * Detailed [CLI](#usage) help and parameters validation
 * Run commands async on numerous targets (using asyncio)
@@ -134,6 +134,8 @@ Options:
 * [ticker](#ticker) `[ON_OFF START_TIME END_TIME POS_HORIZ POS_VERTI MOTION_ON_OFF MOTION_DIR MOTION_SPEED FONT_SIZE FOREGROUND_COLOR BACKGROUND_COLOR FOREGROUND_OPACITY BACKGROUND_OPACITY MESSAGE]`
 * [device_name](#device_name) `(DEVICE_NAME)`
 * [osd](#osd) `[OSD_ENABLED]`
+* [picture_mode](#picture_mode) `[PICTURE_MODE_STATE]`
+* [sound_mode](#sound_mode) `[SOUND_MODE_STATE]`
 * [all_keys_lock](#all_keys_lock) `[LOCK_STATE]`
 * [panel_on_time](#panel_on_time) `(MIN10)`
 * [video_wall_state](#video_wall_state) `[VIDEO_WALL_STATE]`
@@ -181,9 +183,10 @@ Data:
                         PC | BNC | DVI_VIDEO | MAGIC_INFO | HDMI1 | HDMI1_PC |
                         HDMI2 | HDMI2_PC | DISPLAY_PORT_1 | DISPLAY_PORT_2 |
                         DISPLAY_PORT_3 | RF_TV | HDMI3 | HDMI3_PC | HDMI4 |
-                        HDMI4_PC | TV_DTV | PLUG_IN_MODE | HD_BASE_T |
+                        HDMI4_PC | TV_DTV | PLUG_IN_MODE | HD_BASE_T | OCM |
                         MEDIA_MAGIC_INFO_S | WIDI_SCREEN_MIRRORING |
-                        INTERNAL_USB | URL_LAUNCHER | IWB | WEB_BROWSER
+                        INTERNAL_USB | URL_LAUNCHER | IWB | WEB_BROWSER |
+                        REMOTE_WORKSPACE
   PICTURE_ASPECT_STATE  PC_16_9 | PC_4_3 | PC_ORIGINAL_RATIO | PC_21_9 |
                         PC_CUSTOM | VIDEO_AUTO_WIDE | VIDEO_16_9 | VIDEO_ZOOM
                         | VIDEO_ZOOM_1 | VIDEO_ZOOM_2 | VIDEO_SCREEN_FIT |
@@ -281,18 +284,33 @@ Data:
 ```
 Usage: samsung-mdc [OPTIONS] TARGET input_source [INPUT_SOURCE_STATE]
 
+  Get/Set the device source which is shown on the screen.
+
+  DVI_VIDEO, HDMI1_PC, HDMI2_PC, HDMI3_PC, HDMI4_PC: get only.
+
+  URL_LAUNCHER, MAGIC_INFO, TV or some ports require support by model.
+
+  On TIMER functions, Do not use WIDI_SCREEN_MIRRORING.
+
 Data:
   INPUT_SOURCE_STATE  NONE | S_VIDEO | COMPONENT | AV | AV2 | SCART1 | DVI |
                       PC | BNC | DVI_VIDEO | MAGIC_INFO | HDMI1 | HDMI1_PC |
                       HDMI2 | HDMI2_PC | DISPLAY_PORT_1 | DISPLAY_PORT_2 |
                       DISPLAY_PORT_3 | RF_TV | HDMI3 | HDMI3_PC | HDMI4 |
-                      HDMI4_PC | TV_DTV | PLUG_IN_MODE | HD_BASE_T |
+                      HDMI4_PC | TV_DTV | PLUG_IN_MODE | HD_BASE_T | OCM |
                       MEDIA_MAGIC_INFO_S | WIDI_SCREEN_MIRRORING |
-                      INTERNAL_USB | URL_LAUNCHER | IWB | WEB_BROWSER
+                      INTERNAL_USB | URL_LAUNCHER | IWB | WEB_BROWSER |
+                      REMOTE_WORKSPACE
 ```
 #### picture_aspect<a id="picture_aspect"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET picture_aspect [PICTURE_ASPECT_STATE]
+
+  Get/Set the device picture size (aspect ratio).
+
+  Working Condition: Will not work with VIDEO_WALL_STATE is ON.
+
+  Note: Some of the image sizes are not supported depending on input signals.
 
 Data:
   PICTURE_ASPECT_STATE  PC_16_9 | PC_4_3 | PC_ORIGINAL_RATIO | PC_21_9 |
@@ -346,7 +364,9 @@ Data:
 ```
 Usage: samsung-mdc [OPTIONS] TARGET magicinfo_server [MAGICINFO_SERVER_URL]
 
-  MagicInfo Server URL (example: "http://example.com:80")
+  MagicInfo Server URL.
+
+  Example: "http://example.com:80"
 
 Data:
   MAGICINFO_SERVER_URL  str
@@ -393,8 +413,9 @@ Data:
 ```
 Usage: samsung-mdc [OPTIONS] TARGET tint [TINT]
 
-  Tint value code to be set on TV/Monitor. R: Tint Value, G: ( 100 - Tint )
-  Value.
+  Control the device tint. Adjust the ratio of green to red tint level.
+
+  Red: TINT value, Green: ( 100 - TINT ) value.
 
   Note: Tint could only be set in 50 Steps (0, 2, 4, 6... 100).
 
@@ -524,7 +545,7 @@ Data:
 ```
 Usage: samsung-mdc [OPTIONS] TARGET video_wall_mode [VIDEO_WALL_MODE]
 
-  Get or set the device in aspect ratio of the video wall.
+  Get/Set the device in aspect ratio of the video wall.
 
   FULL: stretch input source to fill display
 
@@ -570,7 +591,7 @@ Usage: samsung-mdc [OPTIONS] TARGET ticker [ON_OFF START_TIME END_TIME
                    FONT_SIZE FOREGROUND_COLOR BACKGROUND_COLOR
                    FOREGROUND_OPACITY BACKGROUND_OPACITY MESSAGE]
 
-  Get/set the device ticker. (Show text message overlay on the screen)
+  Get/Set the device ticker. (Show text message overlay on the screen)
 
   Note: POS_HORIZ or POS_VERT are NONE in GET response if unsupported by the
   display.
@@ -612,6 +633,27 @@ Usage: samsung-mdc [OPTIONS] TARGET osd [OSD_ENABLED]
 Data:
   OSD_ENABLED  bool
 ```
+#### picture_mode<a id="picture_mode"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET picture_mode [PICTURE_MODE_STATE]
+
+Data:
+  PICTURE_MODE_STATE  DYNAMIC | STANDARD | MOVIE | CUSTOM_TV | NATURAL |
+                      CALIBRATION_TV | ENTERTAIN | INTERNET | TEXT | CUSTOM |
+                      ADVERTISEMENT | INFORMATION | CALIBRATION |
+                      SHOP_MALL_VIDEO | SHOP_MALL_TEXT | OFFICE_SCHOOL_VIDEO |
+                      OFFICE_SCHOOL_TEXT | TERMINAL_STATION_VIDEO |
+                      TERMINAL_STATION_TEXT | VIDEO_WALL_VIDEO |
+                      VIDEO_WALL_TEXT | HDR_PLUS | OFF | RESERVED_OTHER
+```
+#### sound_mode<a id="sound_mode"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET sound_mode [SOUND_MODE_STATE]
+
+Data:
+  SOUND_MODE_STATE  STANDARD | MUSIC | MOVIE | SPEECH | CUSTOM | AMPLIFY |
+                    OPTIMIZED
+```
 #### all_keys_lock<a id="all_keys_lock"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET all_keys_lock [LOCK_STATE]
@@ -638,7 +680,7 @@ Data:
 ```
 Usage: samsung-mdc [OPTIONS] TARGET video_wall_state [VIDEO_WALL_STATE]
 
-  Get or set the device in video wall state. This will split the primary input
+  Get/Set the device in video wall state. This will split the primary input
   source into smaller N number of squares and display them instead.
 
   Note: The device needs to be capable of this operation. Usually a primary
@@ -652,7 +694,7 @@ Data:
 ```
 Usage: samsung-mdc [OPTIONS] TARGET video_wall_model [MODEL SERIAL]
 
-  Get or set video wall model.
+  Get/Set video wall model.
 
   MODEL: Size of the wall in (x, y) coordinates; ie. "2,2" or "4,1"
 
@@ -720,9 +762,10 @@ Data:
                       PC | BNC | DVI_VIDEO | MAGIC_INFO | HDMI1 | HDMI1_PC |
                       HDMI2 | HDMI2_PC | DISPLAY_PORT_1 | DISPLAY_PORT_2 |
                       DISPLAY_PORT_3 | RF_TV | HDMI3 | HDMI3_PC | HDMI4 |
-                      HDMI4_PC | TV_DTV | PLUG_IN_MODE | HD_BASE_T |
+                      HDMI4_PC | TV_DTV | PLUG_IN_MODE | HD_BASE_T | OCM |
                       MEDIA_MAGIC_INFO_S | WIDI_SCREEN_MIRRORING |
-                      INTERNAL_USB | URL_LAUNCHER | IWB | WEB_BROWSER
+                      INTERNAL_USB | URL_LAUNCHER | IWB | WEB_BROWSER |
+                      REMOTE_WORKSPACE
   HOLIDAY_APPLY       DONT_APPLY_BOTH | APPLY_BOTH | ON_TIMER_ONLY_APPLY |
                       OFF_TIMER_ONLY_APPLY
 ```
@@ -761,9 +804,10 @@ Data:
                       PC | BNC | DVI_VIDEO | MAGIC_INFO | HDMI1 | HDMI1_PC |
                       HDMI2 | HDMI2_PC | DISPLAY_PORT_1 | DISPLAY_PORT_2 |
                       DISPLAY_PORT_3 | RF_TV | HDMI3 | HDMI3_PC | HDMI4 |
-                      HDMI4_PC | TV_DTV | PLUG_IN_MODE | HD_BASE_T |
+                      HDMI4_PC | TV_DTV | PLUG_IN_MODE | HD_BASE_T | OCM |
                       MEDIA_MAGIC_INFO_S | WIDI_SCREEN_MIRRORING |
-                      INTERNAL_USB | URL_LAUNCHER | IWB | WEB_BROWSER
+                      INTERNAL_USB | URL_LAUNCHER | IWB | WEB_BROWSER |
+                      REMOTE_WORKSPACE
   HOLIDAY_APPLY       DONT_APPLY_BOTH | APPLY_BOTH | ON_TIMER_ONLY_APPLY |
                       OFF_TIMER_ONLY_APPLY
 ```
@@ -923,17 +967,17 @@ Data:
                            HDMI1_PC | HDMI2 | HDMI2_PC | DISPLAY_PORT_1 |
                            DISPLAY_PORT_2 | DISPLAY_PORT_3 | RF_TV | HDMI3 |
                            HDMI3_PC | HDMI4 | HDMI4_PC | TV_DTV | PLUG_IN_MODE
-                           | HD_BASE_T | MEDIA_MAGIC_INFO_S |
+                           | HD_BASE_T | OCM | MEDIA_MAGIC_INFO_S |
                            WIDI_SCREEN_MIRRORING | INTERNAL_USB | URL_LAUNCHER
-                           | IWB | WEB_BROWSER
+                           | IWB | WEB_BROWSER | REMOTE_WORKSPACE
   SECONDARY_SOURCE         NONE | S_VIDEO | COMPONENT | AV | AV2 | SCART1 |
                            DVI | PC | BNC | DVI_VIDEO | MAGIC_INFO | HDMI1 |
                            HDMI1_PC | HDMI2 | HDMI2_PC | DISPLAY_PORT_1 |
                            DISPLAY_PORT_2 | DISPLAY_PORT_3 | RF_TV | HDMI3 |
                            HDMI3_PC | HDMI4 | HDMI4_PC | TV_DTV | PLUG_IN_MODE
-                           | HD_BASE_T | MEDIA_MAGIC_INFO_S |
+                           | HD_BASE_T | OCM | MEDIA_MAGIC_INFO_S |
                            WIDI_SCREEN_MIRRORING | INTERNAL_USB | URL_LAUNCHER
-                           | IWB | WEB_BROWSER
+                           | IWB | WEB_BROWSER | REMOTE_WORKSPACE
 ```
 #### panel<a id="panel"></a>
 ```

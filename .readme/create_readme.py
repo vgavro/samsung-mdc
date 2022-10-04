@@ -6,6 +6,9 @@ from samsung_mdc.cli import cli
 
 
 def get_usage_docs():
+    # click newlines for help depends on terminal width,
+    # make this deterministic for regeneration
+    click.formatting.FORCED_WIDTH = 78
     with click.Context(cli, info_name='samsung-mdc') as ctx:
         group_help, commands = cli.get_help(ctx).split('\nCommands:\n')
         rv = '```\n' + group_help + '\n```\n### Commands:\n\n'

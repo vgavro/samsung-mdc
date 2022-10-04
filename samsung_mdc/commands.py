@@ -114,6 +114,16 @@ class MUTE(Command):
 
 
 class INPUT_SOURCE(Command):
+    """
+    Get/Set the device source which is shown on the screen.
+
+    DVI_VIDEO, HDMI1_PC, HDMI2_PC, HDMI3_PC, HDMI4_PC: get only.
+
+    URL_LAUNCHER, MAGIC_INFO, TV or some ports require support by model.
+
+    On TIMER functions, Do not use WIDI_SCREEN_MIRRORING.
+    """
+
     CMD = 0x14
     GET, SET = True, True
 
@@ -129,34 +139,45 @@ class INPUT_SOURCE(Command):
         DVI = 0x18
         PC = 0x14
         BNC = 0x1E
-        DVI_VIDEO = 0x1F
+        DVI_VIDEO = 0x1F  # get only
         MAGIC_INFO = 0x20
         HDMI1 = 0x21
-        HDMI1_PC = 0x22
+        HDMI1_PC = 0x22  # get only
         HDMI2 = 0x23
-        HDMI2_PC = 0x24
+        HDMI2_PC = 0x24  # get only
         DISPLAY_PORT_1 = 0x25
         DISPLAY_PORT_2 = 0x26
         DISPLAY_PORT_3 = 0x27
-        RF_TV = 0x30
+        RF_TV = 0x30  # deprecated
         HDMI3 = 0x31
-        HDMI3_PC = 0x32
+        HDMI3_PC = 0x32  # get only
         HDMI4 = 0x33
-        HDMI4_PC = 0x34
+        HDMI4_PC = 0x34  # get only
         TV_DTV = 0x40
         PLUG_IN_MODE = 0x50
         HD_BASE_T = 0x55
+        OCM = 0x56
         MEDIA_MAGIC_INFO_S = 0x60
         WIDI_SCREEN_MIRRORING = 0x61
         INTERNAL_USB = 0x62
         URL_LAUNCHER = 0x63
         IWB = 0x64
         WEB_BROWSER = 0x65
+        REMOTE_WORKSPACE = 0x66
 
     DATA = [INPUT_SOURCE_STATE]
 
 
 class PICTURE_ASPECT(Command):
+    """
+    Get/Set the device picture size (aspect ratio).
+
+    Working Condition:
+    Will not work with VIDEO_WALL_STATE is ON.
+
+    Note:
+    Some of the image sizes are not supported depending on input signals.
+    """
     CMD = 0x15
     GET, SET = True, True
 
@@ -249,7 +270,9 @@ class WEEKLY_RESTART(Command):
 
 class MAGICINFO_SERVER(Command):
     """
-    MagicInfo Server URL (example: "http://example.com:80")
+    MagicInfo Server URL.
+
+    Example: "http://example.com:80"
     """
     CMD = 0x1C
     SUBCMD = 0x82
@@ -299,8 +322,9 @@ class COLOR(Command):
 
 class TINT(Command):
     """
-    Tint value code to be set on TV/Monitor.
-    R: Tint Value, G: ( 100 - Tint ) Value.
+    Control the device tint. Adjust the ratio of green to red tint level.
+
+    Red: TINT value, Green: ( 100 - TINT ) value.
 
     Note: Tint could only be set in 50 Steps (0, 2, 4, 6... 100).
     """
@@ -517,7 +541,7 @@ class VOLUME_CHANGE(Command):
 
 class TICKER(Command):
     """
-    Get/set the device ticker. (Show text message overlay on the screen)
+    Get/Set the device ticker. (Show text message overlay on the screen)
 
     Note: POS_HORIZ or POS_VERT are NONE in GET response
     if unsupported by the display.
@@ -620,6 +644,55 @@ class OSD(Command):
     GET, SET = True, True
 
     DATA = [Bool('OSD_ENABLED')]
+
+
+class PICTURE_MODE(Command):
+    CMD = 0x71
+    GET, SET = True, True
+
+    class PICTURE_MODE_STATE(Enum):
+        DYNAMIC = 0x00
+        STANDARD = 0x01
+        MOVIE = 0x02
+        CUSTOM_TV = 0x03
+        NATURAL = 0x04
+        CALIBRATION_TV = 0x05
+        ENTERTAIN = 0x10
+        INTERNET = 0x11
+        TEXT = 0x12
+        CUSTOM = 0x13
+        ADVERTISEMENT = 0x14
+        INFORMATION = 0x15
+        CALIBRATION = 0x16
+        SHOP_MALL_VIDEO = 0x20
+        SHOP_MALL_TEXT = 0x21
+        OFFICE_SCHOOL_VIDEO = 0x22
+        OFFICE_SCHOOL_TEXT = 0x23
+        TERMINAL_STATION_VIDEO = 0x24
+        TERMINAL_STATION_TEXT = 0x25
+        VIDEO_WALL_VIDEO = 0x26
+        VIDEO_WALL_TEXT = 0x27
+        HDR_PLUS = 0x30
+        OFF = 0x50
+        RESERVED_OTHER = 0x90
+
+    DATA = [PICTURE_MODE_STATE]
+
+
+class SOUND_MODE(Command):
+    CMD = 0x72
+    GET, SET = True, True
+
+    class SOUND_MODE_STATE(Enum):
+        STANDARD = 0x00
+        MUSIC = 0x01
+        MOVIE = 0x02
+        SPEECH = 0x03
+        CUSTOM = 0x04
+        AMPLIFY = 0x05
+        OPTIMIZED = 0x06
+
+    DATA = [SOUND_MODE_STATE]
 
 
 class ALL_KEYS_LOCK(Command):
@@ -1167,7 +1240,7 @@ class RGB(Command):
 
 class VIDEO_WALL_STATE(Command):
     """
-    Get or set the device in video wall state.
+    Get/Set the device in video wall state.
     This will split the primary input source into smaller N number of squares
     and display them instead.
 
@@ -1187,7 +1260,7 @@ class VIDEO_WALL_STATE(Command):
 
 class VIDEO_WALL_MODE(Command):
     """
-    Get or set the device in aspect ratio of the video wall.
+    Get/Set the device in aspect ratio of the video wall.
 
     FULL: stretch input source to fill display
 
@@ -1207,7 +1280,7 @@ class VIDEO_WALL_MODE(Command):
 
 class VIDEO_WALL_MODEL(Command):
     """
-    Get or set video wall model.
+    Get/Set video wall model.
 
     MODEL: Size of the wall in (x, y) coordinates; ie. "2,2" or "4,1"
 
