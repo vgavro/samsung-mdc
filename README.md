@@ -17,7 +17,7 @@ It allows you to control a variety of different sources (TV, Monitor) through th
 
 Not implemented: some more commands (PRs are welcome)
 
-Also see: [Samsung MDC Unified](http://www.samsung-mcloud.com/02_Software/04_Tools/MDC/v1235/) - Reference Application (GUI, Windows) with partially implemented functionality.
+Also see: [Samsung MDC Unified](http://www.samsung-mcloud.com/01_Software/04_Tools/MDC/v1235/) - Reference Application (GUI, Windows) with partially implemented functionality.
 
 ## Install<a id="install"></a>
 
