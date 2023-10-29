@@ -22,11 +22,14 @@ Also see: [Samsung MDC Unified](http://www.samsung-mcloud.com/01_Software/04_Too
 ## Install<a id="install"></a>
 
 ```
-# global install/upgrade
+# using pipx https://pypa.github.io/pipx/
+pipx run python-samsung-mdc --help
+
+# OR global install/upgrade
 sudo pip3 install --upgrade python-samsung-mdc
 samsung-mdc --help
 
-# local
+# OR local
 git clone https://github.com/vgavro/samsung-mdc
 cd ./samsung-mdc
 python3 -m venv venv
