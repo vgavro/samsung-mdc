@@ -78,6 +78,9 @@ class MDCConnection:
             # Make this package optional
             from serial_asyncio import open_serial_connection
 
+            # Removing the pin item, otherwise pyserial raises a ValueError
+            self.connection_kwargs.pop('pin', None)
+
             self.reader, self.writer = \
                 await wait_for(
                     open_serial_connection(
