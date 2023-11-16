@@ -48,31 +48,25 @@ class MDCConnection:
             partial(print, self.target) if verbose is True else verbose)
 
     async def open(self):
-        if self.mode == CONNECTION_MODE.TCP:
-            pin = self.connection_kwargs.pop('pin', None)
+        connection_kwargs = self.connection_kwargs.copy()
+        pin = connection_kwargs.pop('pin', None)
 
+        if self.mode == CONNECTION_MODE.TCP:
             if isinstance(self.target, (list, tuple)):
                 # make target be compatible with socket.__init__
                 target, port = self.target
             else:
                 target, *port = self.target.split(':')
                 port = port and int(port[0]) or 1515
-            self.connection_kwargs.setdefault('port', port)
+            connection_kwargs.setdefault('port', port)
 
             self.reader, self.writer = \
                 await wait_for(
-                    asyncio.open_connection(target, **self.connection_kwargs),
+                    asyncio.open_connection(target, **connection_kwargs),
                     self.connect_timeout, 'Connect timeout')
 
             if self.verbose:
                 self.verbose('Connected')
-
-            if pin is not None:
-                try:
-                    await self.start_tls(pin)
-                except Exception:
-                    await self.close()
-                    raise
 
         else:
             # Make this package optional
@@ -82,20 +76,26 @@ class MDCConnection:
                 await wait_for(
                     open_serial_connection(
                         url=self.target,
-                        **self.connection_kwargs),
+                        **connection_kwargs),
                     self.connect_timeout, 'Connect timeout')
 
             if self.verbose:
                 self.verbose('Connected')
 
-    async def start_tls(self, pin):
+        if pin is not None:
+            try:
+                await self._start_tls(pin)
+            except Exception:
+                await self.close()
+                raise
+
+    async def _start_tls(self, pin):
         if isinstance(pin, int):
             pin = str(pin).rjust(4, '0').encode()
         elif isinstance(pin, str):
             pin = pin.rjust(4, '0').encode()
 
-        if not self.is_opened:
-            await self.open()
+        assert self.is_opened
 
         import ssl
         resp = await wait_for_read(self.reader, 15, self.timeout,
