@@ -15,7 +15,8 @@ setup(
                  'protocol implementation (asyncio library + CLI interface)'),
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    license='BSD',
+    license='BSD-3-Clause',  # https://spdx.org/licenses/BSD-3-Clause.html
+    license_files=['LICENSE'],
     classifiers=[
         'License :: OSI Approved :: BSD License',
         'Intended Audience :: Developers',
