@@ -6,6 +6,19 @@ from .fields import (Enum as EnumField, Int, IntHL, Bool, Str, Time12H, Time,
 from .utils import parse_enum_bitmask
 
 
+class _COMMON:
+    # It's better to re-use enumerations from "main" related commands,
+    # like INPUT_SOURCE.INPUT_SOURCE_STATE / PICTURE_ASPECT.PICTURE_ASPECT_STATE
+    # Use _COMMON namespace if there is no obvious "main" command,
+    # avoid using it for too simple definitions.
+
+    class ORIENTATION_MODE_STATE(Enum):
+        LANDSCAPE_0 = 0x00
+        PORTRAIT_270 = 0x01
+        LANDSCAPE_180 = 0x02
+        PORTRAIT_90 = 0x03
+
+
 class SERIAL_NUMBER(Command):
     CMD = 0x0B
     GET, SET = True, False
@@ -268,6 +281,18 @@ class WEEKLY_RESTART(Command):
     DATA = [Bitmask(WEEKDAY), Time()]
 
 
+class MAGICINFO_CHANNEL(Command):
+    """
+    Set MagicInfo Channel by Direct Channel Number
+    which is used by MagicInfo S Player.
+    """
+    CMD = 0x1C
+    SUBCMD = 0x81
+    GET, SET = False, True
+
+    DATA = [IntHL('CHANNEL_NUMBER')]
+
+
 class MAGICINFO_SERVER(Command):
     """
     MagicInfo Server URL.
@@ -279,6 +304,14 @@ class MAGICINFO_SERVER(Command):
     GET, SET = True, True
 
     DATA = [Str('MAGICINFO_SERVER_URL')]
+
+
+class MAGICINFO_CONTENT_ORIENTATION(Command):
+    CMD = 0x1C
+    SUBCMD = 0x83
+    GET, SET = True, True
+
+    DATA = [_COMMON.ORIENTATION_MODE_STATE]
 
 
 class MDC_CONNECTION(Command):
@@ -1183,6 +1216,56 @@ class LAUNCHER_URL_ADDRESS(Command):
     SUBCMD = 0x82
     GET, SET = True, True
     DATA = [Str('URL_ADDRESS')]
+
+
+class OSD_MENU_ORIENTATION(Command):
+    CMD = 0xC8
+    SUBCMD = 0x81
+    GET, SET = True, True
+    DATA = [_COMMON.ORIENTATION_MODE_STATE]
+
+
+class OSD_SOURCE_CONTENT_ORIENTATION(Command):
+    CMD = 0xC8
+    SUBCMD = 0x82
+    GET, SET = True, True
+    DATA = [_COMMON.ORIENTATION_MODE_STATE]
+
+
+class OSD_ASPECT_RATIO(Command):
+    """
+    Get/Set the device aspect ratio under portrait mode
+    which set the rotated screen to be full or original.
+    """
+    CMD = 0xC8
+    SUBCMD = 0x83
+    GET, SET = True, True
+
+    class ASPECT_RATIO_STATE(Enum):
+        FULL_SCREEN = 0x00
+        ORIGINAL = 0x01
+
+    DATA = [ASPECT_RATIO_STATE]
+
+
+class OSD_PIP_ORIENTATION(Command):
+    CMD = 0xC8
+    SUBCMD = 0x84
+    GET, SET = True, True
+    DATA = [_COMMON.ORIENTATION_MODE_STATE]
+
+
+class OSD_MENU_SIZE(Command):
+    CMD = 0xC8
+    SUBCMD = 0x85
+    GET, SET = True, True
+
+    class MENU_SIZE_STATE(Enum):
+        ORIGINAL = 0x00
+        MEDIUM = 0x01
+        SMALL = 0x02
+
+    DATA = [MENU_SIZE_STATE]
 
 
 class PANEL(Command):

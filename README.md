@@ -6,7 +6,7 @@ It allows you to control a variety of different sources (TV, Monitor) through th
 
 [MDC Protocol specification - v15.0 2020-11-06](https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf)
 
-* Implemented *74* commands
+* Implemented *81* commands
 * Easy to extend using simple declarative API - see [samsung_mdc/commands.py](https://github.com/vgavro/samsung-mdc/blob/master/samsung_mdc/commands.py)
 * Detailed [CLI](#usage) help and parameters validation
 * Run commands async on numerous targets (using asyncio)
@@ -108,7 +108,9 @@ Options:
 * [network_configuration](#network_configuration) `[IP_ADDRESS SUBNET_MASK GATEWAY_ADDRESS DNS_SERVER_ADDRESS]`
 * [network_mode](#network_mode) `[NETWORK_MODE_STATE]`
 * [weekly_restart](#weekly_restart) `[WEEKDAY TIME]`
+* [magicinfo_channel](#magicinfo_channel) `CHANNEL_NUMBER`
 * [magicinfo_server](#magicinfo_server) `[MAGICINFO_SERVER_URL]`
+* [magicinfo_content_orientation](#magicinfo_content_orientation) `[ORIENTATION_MODE_STATE]`
 * [mdc_connection](#mdc_connection) `[MDC_CONNECTION_TYPE]`
 * [contrast](#contrast) `[CONTRAST]`
 * [brightness](#brightness) `[BRIGHTNESS]`
@@ -160,6 +162,11 @@ Options:
 * [clock_s](#clock_s) `[DATETIME]`
 * [launcher_play_via](#launcher_play_via) `[PLAY_VIA_MODE]`
 * [launcher_url_address](#launcher_url_address) `[URL_ADDRESS]`
+* [osd_menu_orientation](#osd_menu_orientation) `[ORIENTATION_MODE_STATE]`
+* [osd_source_content_orientation](#osd_source_content_orientation) `[ORIENTATION_MODE_STATE]`
+* [osd_aspect_ratio](#osd_aspect_ratio) `[ASPECT_RATIO_STATE]`
+* [osd_pip_orientation](#osd_pip_orientation) `[ORIENTATION_MODE_STATE]`
+* [osd_menu_size](#osd_menu_size) `[MENU_SIZE_STATE]`
 * [auto_source_switch](#auto_source_switch) `[AUTO_SOURCE_SWITCH_STATE]`
 * [auto_source](#auto_source) `[PRIMARY_SOURCE_RECOVERY PRIMARY_SOURCE SECONDARY_SOURCE]`
 * [panel](#panel) `[PANEL_STATE]`
@@ -363,6 +370,16 @@ Data:
   WEEKDAY  list(,) SUN | SAT | FRI | THU | WED | TUE | MON
   TIME     time (format: %H:%M)
 ```
+#### magicinfo_channel<a id="magicinfo_channel"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET magicinfo_channel CHANNEL_NUMBER
+
+  Set MagicInfo Channel by Direct Channel Number which is used by MagicInfo S
+  Player.
+
+Data:
+  CHANNEL_NUMBER  int
+```
 #### magicinfo_server<a id="magicinfo_server"></a>
 ```
 Usage: samsung-mdc [OPTIONS] TARGET magicinfo_server [MAGICINFO_SERVER_URL]
@@ -373,6 +390,15 @@ Usage: samsung-mdc [OPTIONS] TARGET magicinfo_server [MAGICINFO_SERVER_URL]
 
 Data:
   MAGICINFO_SERVER_URL  str
+```
+#### magicinfo_content_orientation<a id="magicinfo_content_orientation"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET magicinfo_content_orientation
+                   [ORIENTATION_MODE_STATE]
+
+Data:
+  ORIENTATION_MODE_STATE  LANDSCAPE_0 | PORTRAIT_270 | LANDSCAPE_180 |
+                          PORTRAIT_90
 ```
 #### mdc_connection<a id="mdc_connection"></a>
 ```
@@ -949,6 +975,50 @@ Usage: samsung-mdc [OPTIONS] TARGET launcher_url_address [URL_ADDRESS]
 
 Data:
   URL_ADDRESS  str
+```
+#### osd_menu_orientation<a id="osd_menu_orientation"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET osd_menu_orientation
+                   [ORIENTATION_MODE_STATE]
+
+Data:
+  ORIENTATION_MODE_STATE  LANDSCAPE_0 | PORTRAIT_270 | LANDSCAPE_180 |
+                          PORTRAIT_90
+```
+#### osd_source_content_orientation<a id="osd_source_content_orientation"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET osd_source_content_orientation
+                   [ORIENTATION_MODE_STATE]
+
+Data:
+  ORIENTATION_MODE_STATE  LANDSCAPE_0 | PORTRAIT_270 | LANDSCAPE_180 |
+                          PORTRAIT_90
+```
+#### osd_aspect_ratio<a id="osd_aspect_ratio"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET osd_aspect_ratio [ASPECT_RATIO_STATE]
+
+  Get/Set the device aspect ratio under portrait mode which set the rotated
+  screen to be full or original.
+
+Data:
+  ASPECT_RATIO_STATE  FULL_SCREEN | ORIGINAL
+```
+#### osd_pip_orientation<a id="osd_pip_orientation"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET osd_pip_orientation
+                   [ORIENTATION_MODE_STATE]
+
+Data:
+  ORIENTATION_MODE_STATE  LANDSCAPE_0 | PORTRAIT_270 | LANDSCAPE_180 |
+                          PORTRAIT_90
+```
+#### osd_menu_size<a id="osd_menu_size"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET osd_menu_size [MENU_SIZE_STATE]
+
+Data:
+  MENU_SIZE_STATE  ORIGINAL | MEDIUM | SMALL
 ```
 #### auto_source_switch<a id="auto_source_switch"></a>
 ```
