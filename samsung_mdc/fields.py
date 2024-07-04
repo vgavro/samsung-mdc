@@ -41,7 +41,7 @@ class IntHL(Int):
     parse_len = 2
 
     def pack(self, value):
-        super().pack(self, value)  # validate range
+        super().pack(value)  # validate range
         return [(value >> 8) & 0xFF, value & 0xFF]
 
     def parse(self, data):
