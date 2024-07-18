@@ -305,6 +305,7 @@ class MDCClickCommand(FixedSubcommand):
         else:
             type = {
                 fields.Str: str,
+                fields.StrCoded: str,
                 fields.Bool: bool,
                 fields.Int: int,
                 fields.IntHL: int,

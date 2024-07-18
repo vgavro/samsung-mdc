@@ -73,14 +73,17 @@ class Command(metaclass=CommandMcs):
     def parse_response_data(cls, data, strict_enum=True):
         rv, cursor = [], 0
         for field in cls.RESPONSE_DATA:
-            if not field.parse_len:
-                rv.append(field.parse(data[cursor:]))
-                cursor = None
-                break
-            rv.append(field.parse(data[cursor:cursor + field.parse_len]))
-            cursor += field.parse_len
+            try:
+                value, cursor_shift = field.parse(data[cursor:])
+            except Exception as exc:
+                raise MDCResponseError(
+                    f'Error parsing {field.name}: {exc}',
+                    data[cursor:]) from exc
 
-        if cursor is not None and data[cursor:]:
+            rv.append(value)
+            cursor += cursor_shift
+
+        if data[cursor:]:
             # Not consumed data left
             raise MDCResponseError('Unparsed data left', data[cursor:])
         return tuple(rv)

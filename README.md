@@ -6,7 +6,7 @@ It allows you to control a variety of different sources (TV, Monitor) through th
 
 [MDC Protocol specification - v15.0 2020-11-06](https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf)
 
-* Implemented *81* commands
+* Implemented *82* commands
 * Easy to extend using simple declarative API - see [samsung_mdc/commands.py](https://github.com/vgavro/samsung-mdc/blob/master/samsung_mdc/commands.py)
 * Detailed [CLI](#usage) help and parameters validation
 * Run commands async on numerous targets (using asyncio)
@@ -107,6 +107,7 @@ Options:
 * [screen_size](#screen_size) `(INCHES)`
 * [network_configuration](#network_configuration) `[IP_ADDRESS SUBNET_MASK GATEWAY_ADDRESS DNS_SERVER_ADDRESS]`
 * [network_mode](#network_mode) `[NETWORK_MODE_STATE]`
+* [network_ap_config](#network_ap_config) `SSID PASSWORD`
 * [weekly_restart](#weekly_restart) `[WEEKDAY TIME]`
 * [magicinfo_channel](#magicinfo_channel) `CHANNEL_NUMBER`
 * [magicinfo_server](#magicinfo_server) `[MAGICINFO_SERVER_URL]`
@@ -361,6 +362,16 @@ Usage: samsung-mdc [OPTIONS] TARGET network_mode [NETWORK_MODE_STATE]
 
 Data:
   NETWORK_MODE_STATE  DYNAMIC | STATIC
+```
+#### network_ap_config<a id="network_ap_config"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET network_ap_config SSID PASSWORD
+
+  Add new SSID info to device connection history with its password
+
+Data:
+  SSID      str
+  PASSWORD  str
 ```
 #### weekly_restart<a id="weekly_restart"></a>
 ```

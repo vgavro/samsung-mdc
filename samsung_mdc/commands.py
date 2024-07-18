@@ -1,7 +1,7 @@
 from enum import Enum
 
 from .command import Command
-from .fields import (Enum as EnumField, Int, IntHL, Bool, Str, Time12H, Time,
+from .fields import (Enum as EnumField, Int, IntHL, Bool, Str, StrCoded, Time12H, Time,
                      DateTime, Bitmask, IPAddress, VideoWallModel)
 from .utils import parse_enum_bitmask
 
@@ -91,7 +91,8 @@ class MODEL_NUMBER(Command):
         NOT_SUPPORTED = 0x01
 
     # NOTE: Actually there is list of MODEL_CODE in specification,
-    # but it's TOO long, and it's TOO old (newer models gets new code)
+    # but it's TOO long, and it's TOO old (newer models gets new code),
+    # so better use MODEL_NAME for this case
     DATA = [MODEL_SPECIES, Int('MODEL_CODE'), TV_SUPPORT]
 
 
@@ -279,6 +280,17 @@ class WEEKLY_RESTART(Command):
         MON = 0x06
 
     DATA = [Bitmask(WEEKDAY), Time()]
+
+
+class NETWORK_AP_CONFIG(Command):
+    """
+    Add new SSID info to device connection history with its password
+    """
+    CMD = 0x1B
+    SUBCMD = 0x8A
+    GET, SET = False, True
+
+    DATA = [StrCoded(0x00, 'SSID'), StrCoded(0x01, 'PASSWORD')]
 
 
 class MAGICINFO_CHANNEL(Command):
