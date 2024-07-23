@@ -14,6 +14,11 @@ ACK_CODE = ord('A')  # 0x41 65
 NAK_CODE = ord('N')  # 0x4E 78
 
 
+def get_checksum(payload):
+    # payload should be without HEADER_CODE
+    return sum(payload) % 256
+
+
 async def wait_for(aw, timeout, reason):
     try:
         return await asyncio.wait_for(aw, timeout)
@@ -158,8 +163,7 @@ class MDCConnection:
         payload = (
             bytes((HEADER_CODE, cmd[0], id, len(cmd[1:]) + len(data)))
             + bytes(cmd[1:]) + bytes(data))
-        checksum = sum(payload[1:]) % 256
-        payload += bytes((checksum,))
+        payload += bytes([get_checksum(payload[1:])])
 
         if not self.is_opened:
             await self.open()
@@ -188,7 +192,7 @@ class MDCConnection:
         if self.verbose:
             self.verbose('Recv', repr_hex(resp))
 
-        checksum = sum(resp[1:-1]) % 256
+        checksum = get_checksum(resp[1:-1])
         if checksum != int(resp[-1]):
             raise MDCResponseError('Checksum failed', resp)
 

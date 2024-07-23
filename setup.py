@@ -7,6 +7,10 @@ requires = [
     'jinja2',
     'pyserial-asyncio'  # tested: pyserial==3.5; pyserial-asyncio==0.5
 ]
+test_requires = [
+    'pytest',
+    'pytest-asyncio',
+]
 
 setup(
     name='python-samsung-mdc',
@@ -37,9 +41,10 @@ setup(
     keywords=['samsung', 'mdc'],
     packages=find_packages(),
     install_requires=requires,
+    tests_require=test_requires,
     entry_points={
         'console_scripts': [
             'samsung-mdc=samsung_mdc.cli:cli',
         ],
-    }
+    },
 )

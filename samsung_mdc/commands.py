@@ -1,9 +1,17 @@
-from enum import Enum
-
 from .command import Command
-from .fields import (Enum as EnumField, Int, IntHL, Bool, Str, StrCoded, Time12H, Time,
-                     DateTime, Bitmask, IPAddress, VideoWallModel)
+from .fields import (
+    Enum as EnumField, Int, IntHL, Bool, Str, StrCoded,
+    Time12H, Time, DateTime, Bitmask, IPAddress, VideoWallModel)
 from .utils import parse_enum_bitmask
+
+
+try:
+    from enum import IntEnum
+except ImportError:
+    from enum import Enum
+
+    class IntEnum(int, Enum):
+        ...
 
 
 class _COMMON:
@@ -12,7 +20,7 @@ class _COMMON:
     # Use _COMMON namespace if there is no obvious "main" command,
     # avoid using it for too simple definitions.
 
-    class ORIENTATION_MODE_STATE(Enum):
+    class ORIENTATION_MODE_STATE(IntEnum):
         LANDSCAPE_0 = 0x00
         PORTRAIT_270 = 0x01
         LANDSCAPE_180 = 0x02
@@ -29,20 +37,20 @@ class ERROR_STATUS(Command):
     CMD = 0x0D
     GET, SET = True, False
 
-    class LAMP_ERROR_STATE(Enum):
+    class LAMP_ERROR_STATE(IntEnum):
         NORMAL = 0x00
         ERROR = 0x01
 
-    class TEMPERATURE_ERROR_STATE(Enum):
+    class TEMPERATURE_ERROR_STATE(IntEnum):
         NORMAL = 0x00
         ERROR = 0x01
 
-    class BRIGHTNESS_SENSOR_ERROR_STATE(Enum):
+    class BRIGHTNESS_SENSOR_ERROR_STATE(IntEnum):
         NONE = 0x00
         ERROR = 0x01
         NORMAL = 0x02
 
-    class INPUT_SOURCE_ERROR_STATE(Enum):
+    class INPUT_SOURCE_ERROR_STATE(IntEnum):
         """
         No_Sync Error
         Note: Invalid status will be replied with app source selected state.
@@ -53,7 +61,7 @@ class ERROR_STATUS(Command):
         ERROR = 0x01
         INVALID = 0x02
 
-    class FAN_ERROR_STATE(Enum):
+    class FAN_ERROR_STATE(IntEnum):
         NORMAL = 0x00
         ERROR = 0x01
         NONE = 0x02  # Fan is not supported
@@ -78,7 +86,7 @@ class MODEL_NUMBER(Command):
     CMD = 0x10
     GET, SET = True, False
 
-    class MODEL_SPECIES(Enum):
+    class MODEL_SPECIES(IntEnum):
         PDP = 0x01
         LCD = 0x02
         DLP = 0x03
@@ -86,7 +94,7 @@ class MODEL_NUMBER(Command):
         CRT = 0x05
         OLED = 0x06
 
-    class TV_SUPPORT(Enum):
+    class TV_SUPPORT(IntEnum):
         SUPPORTED = 0x00
         NOT_SUPPORTED = 0x01
 
@@ -100,7 +108,7 @@ class POWER(Command):
     CMD = 0x11
     GET, SET = True, True
 
-    class POWER_STATE(Enum):
+    class POWER_STATE(IntEnum):
         OFF = 0x00
         ON = 0x01
         REBOOT = 0x02
@@ -119,7 +127,7 @@ class MUTE(Command):
     CMD = 0x13
     GET, SET = True, True
 
-    class MUTE_STATE(Enum):
+    class MUTE_STATE(IntEnum):
         OFF = 0x00
         ON = 0x01
         NONE = 0x255  # Unavailable
@@ -141,7 +149,7 @@ class INPUT_SOURCE(Command):
     CMD = 0x14
     GET, SET = True, True
 
-    class INPUT_SOURCE_STATE(Enum):
+    class INPUT_SOURCE_STATE(IntEnum):
         # not a valid value for INPUT_SOURCE, but valid for auto_source
         NONE = 0x00
 
@@ -195,7 +203,7 @@ class PICTURE_ASPECT(Command):
     CMD = 0x15
     GET, SET = True, True
 
-    class PICTURE_ASPECT_STATE(Enum):
+    class PICTURE_ASPECT_STATE(IntEnum):
         PC_16_9 = 0x10
         PC_4_3 = 0x18
         PC_ORIGINAL_RATIO = 0x20
@@ -223,7 +231,7 @@ class SCREEN_MODE(Command):
     CMD = 0x18
     GET, SET = True, True
 
-    class SCREEN_MODE_STATE(Enum):
+    class SCREEN_MODE_STATE(IntEnum):
         MODE_16_9 = 0x01
         MODE_ZOOM = 0x04
         MODE_4_3 = 0x0B
@@ -257,7 +265,7 @@ class NETWORK_MODE(Command):
     SUBCMD = 0x85
     GET, SET = True, True
 
-    class NETWORK_MODE_STATE(Enum):
+    class NETWORK_MODE_STATE(IntEnum):
         DYNAMIC = 0x00
         STATIC = 0x01
 
@@ -269,7 +277,7 @@ class WEEKLY_RESTART(Command):
     SUBCMD = 0xA2
     GET, SET = True, True
 
-    class WEEKDAY(Enum):
+    class WEEKDAY(IntEnum):
         # NOTE: codes differs from TIMER_15.WEEKDAY
         SUN = 0x00
         SAT = 0x01
@@ -284,7 +292,9 @@ class WEEKLY_RESTART(Command):
 
 class NETWORK_AP_CONFIG(Command):
     """
-    Add new SSID info to device connection history with its password
+    Add new SSID info to device connection history with its password.
+
+    Note: device may change network and response may not be received.
     """
     CMD = 0x1B
     SUBCMD = 0x8A
@@ -334,7 +344,7 @@ class MDC_CONNECTION(Command):
     CMD = 0x1D
     GET, SET = True, True
 
-    class MDC_CONNECTION_TYPE(Enum):
+    class MDC_CONNECTION_TYPE(IntEnum):
         RS232C = 0x00
         RJ45 = 0x01
 
@@ -382,7 +392,7 @@ class H_POSITION(Command):
     CMD = 0x31
     GET, SET = False, True
 
-    class H_POSITION_MOVE_TO(Enum):
+    class H_POSITION_MOVE_TO(IntEnum):
         LEFT = 0x00
         RIGHT = 0x01
 
@@ -393,7 +403,7 @@ class V_POSITION(Command):
     CMD = 0x32
     GET, SET = False, True
 
-    class V_POSITION_MOVE_TO(Enum):
+    class V_POSITION_MOVE_TO(IntEnum):
         UP = 0x00
         DOWN = 0x01
 
@@ -404,7 +414,7 @@ class AUTO_POWER(Command):
     CMD = 0x33
     GET, SET = True, True
 
-    class AUTO_POWER_STATE(Enum):
+    class AUTO_POWER_STATE(IntEnum):
         OFF = 0x00
         ON = 0x01
 
@@ -430,7 +440,7 @@ class IR_STATE(Command):
     CMD = 0x36
     GET, SET = True, True
 
-    class IR_STATE(Enum):
+    class IR_STATE(IntEnum):
         DISABLED = 0x00
         ENABLED = 0x01
 
@@ -460,7 +470,7 @@ class COLOR_TONE(Command):
     CMD = 0x3E
     GET, SET = True, True
 
-    class COLOR_TONE_STATE(Enum):
+    class COLOR_TONE_STATE(IntEnum):
         COOL_2 = 0x00
         COOL_1 = 0x01
         NORMAL = 0x02
@@ -491,7 +501,7 @@ class STANDBY(Command):
     CMD = 0x4A
     GET, SET = True, True
 
-    class STANDBY_STATE(Enum):
+    class STANDBY_STATE(IntEnum):
         OFF = 0x00
         ON = 0x01
         AUTO = 0x02
@@ -533,7 +543,7 @@ class INVERSE(Command):
     CMD = 0x5A
     GET, SET = True, True
 
-    class INVERSE_STATE(Enum):
+    class INVERSE_STATE(IntEnum):
         OFF = 0x00
         ON = 0x01
 
@@ -544,7 +554,7 @@ class SAFETY_LOCK(Command):
     CMD = 0x5D
     GET, SET = True, True
 
-    class LOCK_STATE(Enum):
+    class LOCK_STATE(IntEnum):
         OFF = 0x00
         ON = 0x01
 
@@ -555,7 +565,7 @@ class PANEL_LOCK(Command):
     CMD = 0x5F
     GET, SET = True, True
 
-    class LOCK_STATE(Enum):
+    class LOCK_STATE(IntEnum):
         OFF = 0x00
         ON = 0x01
 
@@ -566,7 +576,7 @@ class CHANNEL_CHANGE(Command):
     CMD = 0x61
     GET, SET = False, True
 
-    class CHANGE_TO(Enum):
+    class CHANGE_TO(IntEnum):
         UP = 0x00
         DOWN = 0x01
 
@@ -577,7 +587,7 @@ class VOLUME_CHANGE(Command):
     CMD = 0x62
     GET, SET = False, True
 
-    class CHANGE_TO(Enum):
+    class CHANGE_TO(IntEnum):
         UP = 0x00
         DOWN = 0x01
 
@@ -594,35 +604,35 @@ class TICKER(Command):
     CMD = 0x63
     GET, SET = True, True
 
-    class POS_HORIZ(Enum):
+    class POS_HORIZ(IntEnum):
         CENTER = 0x00
         LEFT = 0x01
         RIGHT = 0x02
         NONE = 0xFF
 
-    class POS_VERTI(Enum):
+    class POS_VERTI(IntEnum):
         MIDDLE = 0x00
         TOP = 0x01
         BOTTOM = 0x02
         NONE = 0xFF
 
-    class MOTION_DIR(Enum):
+    class MOTION_DIR(IntEnum):
         LEFT = 0x00
         RIGHT = 0x01
         UP = 0x02
         DOWN = 0x03
 
-    class MOTION_SPEED(Enum):
+    class MOTION_SPEED(IntEnum):
         NORMAL = 0x00
         SLOW = 0x01
         FAST = 0x02
 
-    class FONT_SIZE(Enum):
+    class FONT_SIZE(IntEnum):
         STANDARD = 0x00
         SMALL = 0x01
         LARGE = 0x02
 
-    class FOREGROUND_COLOR(Enum):
+    class FOREGROUND_COLOR(IntEnum):
         BLACK = 0x00
         WHITE = 0x01
         RED = 0x02
@@ -632,7 +642,7 @@ class TICKER(Command):
         MAGENTA = 0x06
         CYAN = 0x07
 
-    class BACKGROUND_COLOR(Enum):
+    class BACKGROUND_COLOR(IntEnum):
         BLACK = 0x00
         WHITE = 0x01
         RED = 0x02
@@ -642,12 +652,12 @@ class TICKER(Command):
         MAGENTA = 0x06
         CYAN = 0x07
 
-    class FOREGROUND_OPACITY(Enum):
+    class FOREGROUND_OPACITY(IntEnum):
         FLASHING = 0x03
         FLASH_ALL = 0x04
         OFF = 0x05
 
-    class BACKGROUND_OPACITY(Enum):
+    class BACKGROUND_OPACITY(IntEnum):
         SOLID = 0x00
         TRANSPARENT = 0x01
         TRANSLUCENT = 0x02
@@ -695,7 +705,7 @@ class PICTURE_MODE(Command):
     CMD = 0x71
     GET, SET = True, True
 
-    class PICTURE_MODE_STATE(Enum):
+    class PICTURE_MODE_STATE(IntEnum):
         DYNAMIC = 0x00
         STANDARD = 0x01
         MOVIE = 0x02
@@ -728,7 +738,7 @@ class SOUND_MODE(Command):
     CMD = 0x72
     GET, SET = True, True
 
-    class SOUND_MODE_STATE(Enum):
+    class SOUND_MODE_STATE(IntEnum):
         STANDARD = 0x00
         MUSIC = 0x01
         MOVIE = 0x02
@@ -751,7 +761,7 @@ class ALL_KEYS_LOCK(Command):
     CMD = 0x77
     GET, SET = True, True
 
-    class LOCK_STATE(Enum):
+    class LOCK_STATE(IntEnum):
         OFF = 0x00
         ON = 0x01
 
@@ -774,16 +784,12 @@ class PANEL_ON_TIME(Command):
     GET, SET = True, False
     DATA = [IntHL('MIN10')]
 
-    @classmethod
-    def parse_response_data(cls, data):
-        return super().parse_response_data(data)[0]
-
 
 class ENERGY_SAVING(Command):
     CMD = 0x92
     GET, SET = True, True
 
-    class ENERGY_SAVING_STATE(Enum):
+    class ENERGY_SAVING_STATE(IntEnum):
         OFF = 0x00
         LOW = 0x01
         MEDIUM = 0x02
@@ -797,7 +803,7 @@ class RESET(Command):
     CMD = 0x9F
     GET, SET = False, True
 
-    class RESET_TARGET(Enum):
+    class RESET_TARGET(IntEnum):
         PICTURE = 0x00
         SOUND = 0x01
         SETUP = 0x02  # (System reset)
@@ -814,7 +820,7 @@ class OSD_TYPE(Command):
     CMD = 0xA3
     GET, SET = True, True
 
-    class OSD_TYPE(Enum):
+    class OSD_TYPE(IntEnum):
         SOURCE = 0x00
         NOT_OPTIMUM_MODE = 0x01
         NO_SIGNAL = 0x02
@@ -822,10 +828,7 @@ class OSD_TYPE(Command):
         SCHEDULE_CHANNEL = 0x04
 
     DATA = [OSD_TYPE, Bool('OSD_ENABLED')]
-
-    @classmethod
-    def parse_response_data(cls, data):
-        return parse_enum_bitmask(cls.OSD_TYPE, data[0])
+    RESPONSE_DATA = [Bitmask(OSD_TYPE, 'OSD_STATUS')]
 
 
 class TIMER_15(Command):
@@ -846,7 +849,7 @@ class TIMER_15(Command):
     _TIMER_ID_CMD = [0xA4, 0xA5, 0xA6, 0xAB, 0xAC, 0xAD, 0xAE]
     GET, SET = True, True
 
-    class TIMER_REPEAT(Enum):
+    class TIMER_REPEAT(IntEnum):
         ONCE = 0x00
         EVERYDAY = 0x01
         MON_FRI = 0x02
@@ -854,7 +857,7 @@ class TIMER_15(Command):
         SAT_SUN = 0x04
         MANUAL_WEEKDAY = 0x05
 
-    class WEEKDAY(Enum):
+    class WEEKDAY(IntEnum):
         SUN = 0x00
         MON = 0x01
         TUE = 0x02
@@ -864,7 +867,7 @@ class TIMER_15(Command):
         SAT = 0x06
         # ignore_bit_7 = 7
 
-    class HOLIDAY_APPLY(Enum):
+    class HOLIDAY_APPLY(IntEnum):
         DONT_APPLY_BOTH = 0x00
         APPLY_BOTH = 0x01
         ON_TIMER_ONLY_APPLY = 0x02
@@ -975,7 +978,7 @@ class HOLIDAY_SET(Command):
     CMD = 0xA8
     GET, SET = False, True
 
-    class HOLIDAY_MANAGE(Enum):
+    class HOLIDAY_MANAGE(IntEnum):
         ADD = 0x00
         DELETE = 0x01
         DELETE_ALL = 0x02
@@ -1012,6 +1015,8 @@ class HOLIDAY_GET(Command):
     @classmethod
     def parse_response_data(cls, data):
         if data[1:] == bytes([0, 0, 0, 0]):
+            # index was not specified,
+            # so it's total number of holiday information
             return [int(data[0])]
         return super().parse_response_data(data)
 
@@ -1026,7 +1031,7 @@ class VIRTUAL_REMOTE(Command):
     CMD = 0xB0
     GET, SET = False, True
 
-    class KEY_CODE(Enum):
+    class KEY_CODE(IntEnum):
         KEY_SOURCE = 0x01
         KEY_POWER = 0x02
         KEY_1 = 0x04
@@ -1074,7 +1079,7 @@ class VIRTUAL_REMOTE(Command):
 
     # # Corresponding to MediaKey API
     # # https://docs.tizen.org/application/web/api/latest/device_api/mobile/tizen/mediakey.html  # noqa
-    # class MEDIA_KEY_CODE(Enum):
+    # class MEDIA_KEY_CODE(IntEnum):
     #     PLAY = KEY_CODE.KEY_PLAY
     #     STOP = KEY_CODE.KEY_STOP
     #     PAUSE = KEY_CODE.KEY_PAUSE
@@ -1091,7 +1096,7 @@ class NETWORK_STANDBY(Command):
     CMD = 0xB5
     GET, SET = True, True
 
-    class NETWORK_STANDBY_STATE(Enum):
+    class NETWORK_STANDBY_STATE(IntEnum):
         OFF = 0x00
         ON = 0x01
 
@@ -1102,12 +1107,12 @@ class DST(Command):
     CMD = 0xB6
     GET, SET = True, True
 
-    class DST_STATE(Enum):
+    class DST_STATE(IntEnum):
         OFF = 0x00
         AUTO = 0x01
         MANUAL = 0x02
 
-    class MONTH(Enum):
+    class MONTH(IntEnum):
         JAN = 0x00
         FEB = 0x01
         MAR = 0x02
@@ -1121,14 +1126,14 @@ class DST(Command):
         NOV = 0x0A
         DEC = 0x0B
 
-    class WEEK(Enum):
+    class WEEK(IntEnum):
         WEEK_1 = 0x00
         WEEK_2 = 0x01
         WEEK_3 = 0x02
         WEEK_4 = 0x03
         WEEK_LAST = 0x04
 
-    class WEEKDAY(Enum):
+    class WEEKDAY(IntEnum):
         # NOTE: same as TIMER_15.WEEKDAY
         SUN = 0x00
         MON = 0x01
@@ -1138,7 +1143,7 @@ class DST(Command):
         FRI = 0x05
         SAT = 0x06
 
-    class OFFSET(Enum):
+    class OFFSET(IntEnum):
         PLUS_1_00 = 0x00
         PLUS_2_00 = 0x01
 
@@ -1164,7 +1169,7 @@ class AUTO_ID_SETTING(Command):
     CMD = 0xB8
     GET, SET = True, True
 
-    class AUTO_ID_SETTING_STATE(Enum):
+    class AUTO_ID_SETTING_STATE(IntEnum):
         START = 0x00
         END = 0x01
 
@@ -1175,7 +1180,7 @@ class DISPLAY_ID(Command):
     CMD = 0xB9
     GET, SET = False, True
 
-    class DISPLAY_ID_STATE(Enum):
+    class DISPLAY_ID_STATE(IntEnum):
         OFF = 0x00
         ON = 0x01
 
@@ -1187,7 +1192,7 @@ class AUTO_SOURCE_SWITCH(Command):
     SUBCMD = 0x81
     GET, SET = True, True
 
-    class AUTO_SOURCE_SWITCH_STATE(Enum):
+    class AUTO_SOURCE_SWITCH_STATE(IntEnum):
         OFF = 0x00
         ON = 0x01
 
@@ -1199,7 +1204,7 @@ class AUTO_SOURCE(Command):
     SUBCMD = 0x82
     GET, SET = True, True
 
-    class PRIMARY_SOURCE_RECOVERY(Enum):
+    class PRIMARY_SOURCE_RECOVERY(IntEnum):
         OFF = 0x00
         ON = 0x01
 
@@ -1215,7 +1220,7 @@ class LAUNCHER_PLAY_VIA(Command):
     SUBCMD = 0x81
     GET, SET = True, True
 
-    class PLAY_VIA_MODE(Enum):
+    class PLAY_VIA_MODE(IntEnum):
         MAGIC_INFO = 0x00
         URL_LAUNCHER = 0x01
         MAGIC_IWB = 0x02
@@ -1253,7 +1258,7 @@ class OSD_ASPECT_RATIO(Command):
     SUBCMD = 0x83
     GET, SET = True, True
 
-    class ASPECT_RATIO_STATE(Enum):
+    class ASPECT_RATIO_STATE(IntEnum):
         FULL_SCREEN = 0x00
         ORIGINAL = 0x01
 
@@ -1272,7 +1277,7 @@ class OSD_MENU_SIZE(Command):
     SUBCMD = 0x85
     GET, SET = True, True
 
-    class MENU_SIZE_STATE(Enum):
+    class MENU_SIZE_STATE(IntEnum):
         ORIGINAL = 0x00
         MEDIUM = 0x01
         SMALL = 0x02
@@ -1284,7 +1289,7 @@ class PANEL(Command):
     CMD = 0xF9
     GET, SET = True, True
 
-    class PANEL_STATE(Enum):
+    class PANEL_STATE(IntEnum):
         ON = 0x00
         OFF = 0x01
 
@@ -1346,7 +1351,7 @@ class VIDEO_WALL_STATE(Command):
     CMD = 0x84
     GET, SET = True, True
 
-    class VIDEO_WALL_STATE(Enum):
+    class VIDEO_WALL_STATE(IntEnum):
         OFF = 0x00
         ON = 0x01
 
@@ -1366,7 +1371,7 @@ class VIDEO_WALL_MODE(Command):
     CMD = 0x5C
     GET, SET = True, True
 
-    class VIDEO_WALL_MODE(Enum):
+    class VIDEO_WALL_MODE(IntEnum):
         NATURAL = 0x00
         FULL = 0x01
 

@@ -367,7 +367,9 @@ Data:
 ```
 Usage: samsung-mdc [OPTIONS] TARGET network_ap_config SSID PASSWORD
 
-  Add new SSID info to device connection history with its password
+  Add new SSID info to device connection history with its password.
+
+  Note: device may change network and response may not be received.
 
 Data:
   SSID      str
