@@ -5,8 +5,14 @@ exec(open('samsung_mdc/version.py').read())
 requires = [
     'click',  # tested: click >=7,<=8
     'jinja2',
+]
+serial_requires = [
     'pyserial-asyncio'  # tested: pyserial==3.5; pyserial-asyncio==0.5
 ]
+# TODO: leaving serial in default dependencies
+# just not to make README and pipx usage too complicated
+requires += serial_requires
+
 test_requires = [
     'pytest',
     'pytest-asyncio',
@@ -42,7 +48,11 @@ setup(
     keywords=['samsung', 'mdc'],
     packages=find_packages(),
     install_requires=requires,
-    tests_require=test_requires,
+    extras_require={
+        'test': test_requires,
+        'serial': serial_requires,
+        'all': serial_requires,
+    },
     entry_points={
         'console_scripts': [
             'samsung-mdc=samsung_mdc.cli:cli',
