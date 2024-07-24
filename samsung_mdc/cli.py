@@ -515,7 +515,13 @@ def asyncio_run(call, targets):
     if platform.system() == 'Windows':
         asyncio.set_event_loop_policy(
             asyncio.WindowsSelectorEventLoopPolicy())
-    loop = asyncio.get_event_loop()
+    try:
+        loop = asyncio.get_running_loop()
+        is_running_loop = True
+    except RuntimeError:
+        loop = asyncio.get_event_loop()
+        is_running_loop = False
+
     loop.run_until_complete(asyncio.wait([
         loop.create_task(call(*target))
         for target in targets
@@ -529,7 +535,8 @@ def asyncio_run(call, targets):
             for connection in connections
         ]))
 
-    loop.close()
+    if not is_running_loop:
+        loop.close()
 
 
 def register_command(command):

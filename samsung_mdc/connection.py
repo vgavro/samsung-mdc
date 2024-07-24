@@ -19,6 +19,62 @@ def get_checksum(payload):
     return sum(payload) % 256
 
 
+def _normalize_cmd(
+    cmd: Union[int, Tuple[int], Tuple[int, Union[int, None]]]
+) -> Tuple[int, Union[int, None]]:
+    """
+    Returns (cmd, subcmd) tuple
+    """
+    if isinstance(cmd, int):
+        return cmd, None
+    elif len(cmd) == 1:
+        return int(cmd[0]), None
+    elif not len(cmd) == 2:
+        raise ValueError('cmd tuple should contain only (cmd, subcmd)')
+    return int(cmd[0]), None if cmd[1] is None else int(cmd[1])
+
+
+def pack_payload(
+    cmd: Union[int, Tuple[int], Tuple[int, int]],
+    display_id: int,
+    data: Union[bytes, Sequence] = b''
+):
+    cmd, subcmd = _normalize_cmd(cmd)
+    data = bytes(data)
+    if subcmd is not None:
+        data = bytes([subcmd]) + data
+
+    payload = (
+        bytes([HEADER_CODE, cmd, display_id, len(data)])
+        + bytes(data)
+    )
+    payload += bytes([get_checksum(payload[1:])])
+    return payload
+
+
+def pack_response(
+    cmd: Union[int, Tuple[int], Tuple[int, int]],
+    display_id: int,
+    ack: bool,
+    data: Union[bytes, Sequence] = b''
+):
+    cmd, subcmd = _normalize_cmd(cmd)
+
+    if not ack and len(data) != 1:
+        raise ValueError(
+            'Data should contain only error code for NAK response', data)
+
+    data = bytes(data)
+    if subcmd is not None and ack:
+        # subcmd is not sent on NAK in response
+        data = bytes([subcmd]) + data
+
+    return pack_payload(
+       RESPONSE_CMD, display_id,
+       bytes([ACK_CODE if ack else NAK_CODE, cmd]) + data
+    )
+
+
 async def wait_for(aw, timeout, reason):
     try:
         return await asyncio.wait_for(aw, timeout)
@@ -153,17 +209,17 @@ class MDCConnection:
 
     @property
     def is_tls_started(self):
-        return (self.writer and self.writer._transport.__class__.__name__ ==
+        return (self.writer and self.writer.transport.__class__.__name__ ==
                 '_SSLProtocolTransport')
 
-    async def send(self, cmd: Union[int, Tuple[int], Tuple[int, int]], id: int,
-                   data: Union[bytes, Sequence] = b''):
-        if isinstance(cmd, int):
-            cmd = (cmd,)
-        payload = (
-            bytes((HEADER_CODE, cmd[0], id, len(cmd[1:]) + len(data)))
-            + bytes(cmd[1:]) + bytes(data))
-        payload += bytes([get_checksum(payload[1:])])
+    async def send(
+        self,
+        cmd: Union[int, Tuple[int], Tuple[int, int]],
+        display_id: int,
+        data: Union[bytes, Sequence] = b''
+    ):
+        cmd, subcmd = _normalize_cmd(cmd)
+        payload = pack_payload((cmd, subcmd), display_id, data)
 
         if not self.is_opened:
             await self.open()
@@ -185,9 +241,12 @@ class MDCConnection:
         if resp[1] != RESPONSE_CMD:
             raise MDCResponseError('Unexpected cmd',
                                    resp + self.reader._buffer)
-        if resp[2] != id:
-            raise MDCResponseError('Unexpected id', resp + self.reader._buffer)
-        resp += await wait_for_read(self.reader, resp[3] + 1, self.timeout,
+        if resp[2] != display_id:
+            raise MDCResponseError('Unexpected display_id',
+                                   resp + self.reader._buffer)
+
+        length = resp[3]
+        resp += await wait_for_read(self.reader, length + 1, self.timeout,
                                     'Response data read timeout')
         if self.verbose:
             self.verbose('Recv', repr_hex(resp))
@@ -200,10 +259,17 @@ class MDCConnection:
         if ack not in (ACK_CODE, NAK_CODE):
             raise MDCResponseError('Unexpected ACK/NAK', resp)
 
+        if subcmd and ack == ACK_CODE:
+            # rsubcmd is not sent on NAK
+            rsubcmd = data[0]
+            data = data[1:]
+        else:
+            rsubcmd = None
+
         return (
             ack == ACK_CODE,
-            (rcmd, data[0]) if (ack == ACK_CODE and len(cmd) > 1) else (rcmd,),
-            data[1:] if (ack == ACK_CODE and len(cmd) > 1) else data
+            (rcmd,) if rsubcmd is None else (rcmd, rsubcmd),
+            data
         )
 
     async def close(self):

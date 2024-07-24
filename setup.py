@@ -10,6 +10,7 @@ requires = [
 test_requires = [
     'pytest',
     'pytest-asyncio',
+    'nest-asyncio',
 ]
 
 setup(
