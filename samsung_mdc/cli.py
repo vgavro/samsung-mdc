@@ -12,12 +12,18 @@ import re
 import os.path
 from sys import argv as sys_argv
 import platform
+from traceback import print_exception as _print_exception
 
 import click
 
 from . import MDC, fields, __version__
 from .utils import parse_hex, repr_hex
 from .exceptions import NAKError
+
+
+def print_exception(exc):
+    # compatibility, not required after Python 3.10
+    _print_exception(type(exc), exc, exc.__traceback__)
 
 
 def _parse_int(x):
@@ -510,7 +516,7 @@ def cli(ctx, target, verbose, mode, pin, **kwargs):
     ctx.obj['verbose'] = verbose
 
 
-def asyncio_run(call, targets):
+def asyncio_run(call, targets, verbose=False):
     if platform.system() == 'Windows':
         asyncio.set_event_loop_policy(
             asyncio.WindowsSelectorEventLoopPolicy())
@@ -526,11 +532,20 @@ def asyncio_run(call, targets):
         for target in targets
     ]))
 
+    async def close(connection):
+        try:
+            await connection.close()
+        except Exception as exc:
+            if verbose:
+                print(f'{connection.target}',
+                      f'{exc.__class__.__name__}: {exc}')
+                print_exception(exc)
+
     # Gracefully close connections
     connections = [target[0] for target in targets if target[0].is_opened]
     if connections:
         loop.run_until_complete(asyncio.wait([
-            loop.create_task(connection.close())
+            loop.create_task(close(connection))
             for connection in connections
         ]))
 
@@ -550,9 +565,9 @@ def register_command(command):
             except Exception as exc:
                 failed_targets.append((connection, display_id, exc))
                 if ctx.obj['verbose']:
-                    raise
+                    print_exception(exc)
 
-        asyncio_run(call, ctx.obj['targets'])
+        asyncio_run(call, ctx.obj['targets'], ctx.obj['verbose'])
 
         if failed_targets:
             if len(ctx.obj['targets']) > 1:
@@ -737,9 +752,9 @@ def script(ctx, script_file, sleep, retry_command, retry_command_sleep,
             print(f'{display_id}@{connection.target}',
                   f'Script failed indefinitely: {last_exc}')
             if ctx.obj['verbose']:
-                raise last_exc
+                print_exception(last_exc)
 
-    asyncio_run(call, ctx.obj['targets'])
+    asyncio_run(call, ctx.obj['targets'], ctx.obj['verbose'])
 
     if failed_targets:
         if len(ctx.obj['targets']) > 1:
@@ -774,9 +789,9 @@ def raw(ctx, command, data):
                   f'{exc.__class__.__name__}: {exc}')
             failed_targets.append((connection, display_id, exc))
             if ctx.obj['verbose']:
-                raise
+                print_exception(exc)
 
-    asyncio_run(call, ctx.obj['targets'])
+    asyncio_run(call, ctx.obj['targets'], ctx.obj['verbose'])
 
     if failed_targets:
         if len(ctx.obj['targets']) > 1:
