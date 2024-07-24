@@ -21,30 +21,19 @@ class Field:
 class Int(Field):
     range = None
 
-    def __init__(self, name=None, range=None):
-        if range:
-            self.range = range
+    def __init__(self, name=None, range=None, length=1, byteorder='big'):
         super().__init__(name)
+        self.range = range
+        self.length = length
+        self.byteorder = byteorder
 
     def pack(self, value):
         if self.range and value not in self.range:
             raise ValueError('Field not in range', self.name, self.range)
-        return [int(value)]
+        return int(value).to_bytes(self.length, byteorder=self.byteorder)
 
     def parse(self, data):
-        return int(data[0]), 1
-
-
-class IntHL(Int):
-    # Integer represented by high+low bytes
-    # https://stackoverflow.com/a/6090641/450103
-
-    def pack(self, value):
-        super().pack(value)  # validate range
-        return [(value >> 8) & 0xFF, value & 0xFF]
-
-    def parse(self, data):
-        return (data[1] | (data[0] << 8)), 2
+        return int.from_bytes(data[:self.length], self.byteorder), self.length
 
 
 class Bool(Int):

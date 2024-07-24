@@ -12,7 +12,17 @@ from samsung_mdc import MDC
     [
         'panel_on_time', 0,
         [], [],
-        [32768], [128, 0]
+        [2 ** 15], [128, 0]
+    ],
+    [
+        'panel_on_time', 0,
+        [], [],
+        [2 ** 15], [0, 128, 0]  # dynamic response length for newer models
+    ],
+    [
+        'panel_on_time', 0,
+        [], [],
+        [2 ** 16 + 1], [1, 0, 1]
     ],
     [
         'network_ap_config', 0,

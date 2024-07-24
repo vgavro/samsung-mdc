@@ -54,7 +54,7 @@ class Command(metaclass=CommandMcs):
                 self.pack_payload_data(data) if data else []
             ),
         )
-        return self.parse_response_data(data)
+        return tuple(self.parse_response_data(data))
 
     def __get__(self, connection, cls):
         # Allow Command to be bounded as instance method

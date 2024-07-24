@@ -1,8 +1,7 @@
 from .command import Command
 from .fields import (
-    Enum as EnumField, Int, IntHL, Bool, Str, StrCoded,
+    Enum as EnumField, Int, Bool, Str, StrCoded,
     Time12H, Time, DateTime, Bitmask, IPAddress, VideoWallModel)
-from .utils import parse_enum_bitmask
 
 
 try:
@@ -312,7 +311,7 @@ class MAGICINFO_CHANNEL(Command):
     SUBCMD = 0x81
     GET, SET = False, True
 
-    DATA = [IntHL('CHANNEL_NUMBER')]
+    DATA = [Int('CHANNEL_NUMBER', length=2, byteorder='big')]
 
 
 class MAGICINFO_SERVER(Command):
@@ -782,7 +781,13 @@ class PANEL_ON_TIME(Command):
     """
     CMD = 0x83
     GET, SET = True, False
-    DATA = [IntHL('MIN10')]
+    DATA = [Int('MIN10', length=2, byteorder='big')]
+
+    @classmethod
+    def parse_response_data(cls, data):
+        # looks like they increased length on newer models,
+        # so we're trying to decoce anyway
+        return (int.from_bytes(data, byteorder='big'),)
 
 
 class ENERGY_SAVING(Command):
@@ -1017,7 +1022,7 @@ class HOLIDAY_GET(Command):
         if data[1:] == bytes([0, 0, 0, 0]):
             # index was not specified,
             # so it's total number of holiday information
-            return [int(data[0])]
+            return (int(data[0]),)
         return super().parse_response_data(data)
 
 
