@@ -1,3 +1,4 @@
+import sys
 from unittest.mock import Mock
 from asyncio import StreamReader, StreamWriter
 
@@ -12,6 +13,12 @@ class MDCMock(MDC):
         super().__init__(target, *args, **kwargs)
         self.timeout = 1
         self.writer = Mock(spec=StreamWriter)
+        if sys.version_info < (3, 8):
+            # fix for Python 3.7
+            async def drain():
+                ...
+            self.writer.drain  = drain
+
         self.reader = StreamReader()
 
     async def close(self):
