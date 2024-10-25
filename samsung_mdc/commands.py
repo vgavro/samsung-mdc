@@ -129,7 +129,7 @@ class MUTE(Command):
     class MUTE_STATE(IntEnum):
         OFF = 0x00
         ON = 0x01
-        NONE = 0x255  # Unavailable
+        NONE = 0xFF  # Unavailable
 
     DATA = [MUTE_STATE]
 
