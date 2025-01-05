@@ -6,7 +6,7 @@ It allows you to control a variety of different sources (TV, Monitor) through th
 
 [MDC Protocol specification - v15.0 2020-11-06](https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf)
 
-* Implemented *82* commands
+* Implemented *83* commands
 * Easy to extend using simple declarative API - see [samsung_mdc/commands.py](https://github.com/vgavro/samsung-mdc/blob/master/samsung_mdc/commands.py)
 * Detailed [CLI](#usage) help and parameters validation
 * Run commands async on numerous targets (using asyncio)
@@ -171,6 +171,7 @@ Options:
 * [auto_source_switch](#auto_source_switch) `[AUTO_SOURCE_SWITCH_STATE]`
 * [auto_source](#auto_source) `[PRIMARY_SOURCE_RECOVERY PRIMARY_SOURCE SECONDARY_SOURCE]`
 * [panel](#panel) `[PANEL_STATE]`
+* [screen_mute](#screen_mute) `[SCREEN_MUTE_STATUS]`
 * [script](#script) `[OPTIONS] SCRIPT_FILE`
 * [raw](#raw) `[OPTIONS] COMMAND [DATA]`
 
@@ -1071,6 +1072,13 @@ Usage: samsung-mdc [OPTIONS] TARGET panel [PANEL_STATE]
 
 Data:
   PANEL_STATE  ON | OFF
+```
+#### screen_mute<a id="screen_mute"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET screen_mute [SCREEN_MUTE_STATUS]
+
+Data:
+  SCREEN_MUTE_STATUS  ON | OFF
 ```
 #### script<a id="script"></a>
 ```

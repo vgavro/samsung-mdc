@@ -1306,6 +1306,20 @@ class PANEL(Command):
     DATA = [PANEL_STATE]
 
 
+class SCREEN_MUTE(Command):
+    # Undocumented (as of Ver. 15 2020-11-06)
+    # see https://github.com/vgavro/samsung-mdc/issues/19
+    CMD = 0xFE
+    SUBCMD = 0x51
+    GET, SET = True, True
+
+    class SCREEN_MUTE_STATUS(IntEnum):
+        ON = 0x00
+        OFF = 0xFF
+
+    DATA = [SCREEN_MUTE_STATUS]
+
+
 class STATUS(Command):
     """
     Get the device various state like power, volume, sound mute, input source,
