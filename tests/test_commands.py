@@ -1,13 +1,13 @@
 import pytest
 
-from samsung_mdc import MDC
+from samsung_mdc import MDC, commands
 
 
 @pytest.mark.parametrize('command,display_id,req,req_data,resp,resp_data', [
     [
         'power', 0,
         [1], [1],
-        [1], [MDC.power.POWER_STATE.ON]
+        [1], [commands.POWER.POWER_STATE.ON]
     ],
     [
         'panel_on_time', 0,

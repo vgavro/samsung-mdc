@@ -1,16 +1,21 @@
+from typing import TYPE_CHECKING
+
 from .command import Command
 from .fields import (
     Enum as EnumField, Int, Bool, Str, StrCoded,
     Time12H, Time, DateTime, Bitmask, IPAddress, VideoWallModel)
 
 
-try:
+if TYPE_CHECKING:
     from enum import IntEnum
-except ImportError:
-    from enum import Enum
+else:
+    try:
+        from enum import IntEnum
+    except ImportError:
+        from enum import Enum
 
-    class IntEnum(int, Enum):
-        ...
+        class IntEnum(int, Enum):
+            ...
 
 
 class _COMMON:

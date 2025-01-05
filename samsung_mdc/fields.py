@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Sequence, Optional
 from datetime import datetime, time
 
 from .utils import (
@@ -19,7 +19,7 @@ class Field:
 
 
 class Int(Field):
-    range = None
+    range: Optional[range] = None
 
     def __init__(self, name=None, range=None, length=1, byteorder='big'):
         super().__init__(name)

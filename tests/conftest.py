@@ -1,8 +1,9 @@
+from typing import AsyncIterator
 import sys
 from unittest.mock import Mock
 from asyncio import StreamReader, StreamWriter
 
-import pytest_asyncio
+import pytest_asyncio  # type: ignore[import-not-found]
 
 from samsung_mdc import MDC
 from samsung_mdc.connection import pack_payload, pack_response
@@ -59,16 +60,17 @@ class MDCMockSingleton(MDCMock):
 
 
 @pytest_asyncio.fixture
-async def mdc_mock() -> MDCMockSingleton:
+async def mdc_mock() -> AsyncIterator[MDCMockSingleton]:
     import samsung_mdc
     import samsung_mdc.cli
 
-    samsung_mdc.MDC = MDCMockSingleton
-    samsung_mdc.cli.MDC = MDCMockSingleton
+    # monkey patch
+    samsung_mdc.MDC = MDCMockSingleton  # type: ignore[misc]
+    samsung_mdc.cli.MDC = MDCMockSingleton  # type: ignore[misc]
 
     try:
         yield MDCMockSingleton()
     finally:
-        samsung_mdc.MDC = MDC
-        samsung_mdc.cli.MDC = MDC
+        samsung_mdc.MDC = MDC  # type: ignore[misc]
+        samsung_mdc.cli.MDC = MDC  # type: ignore[misc]
         MDCMockSingleton._singleton = None

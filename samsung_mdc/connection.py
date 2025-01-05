@@ -35,7 +35,7 @@ def _normalize_cmd(
 
 
 def pack_payload(
-    cmd: Union[int, Tuple[int], Tuple[int, int]],
+    cmd: Union[int, Tuple[int], Tuple[int, Union[int, None]]],
     display_id: int,
     data: Union[bytes, Sequence] = b''
 ):
@@ -131,7 +131,9 @@ class MDCConnection:
 
         else:
             # Make this package optional
-            from serial_asyncio import open_serial_connection
+            from serial_asyncio import (  # type: ignore[import-untyped]
+                open_serial_connection
+            )
 
             self.reader, self.writer = \
                 await wait_for(
@@ -223,6 +225,7 @@ class MDCConnection:
 
         if not self.is_opened:
             await self.open()
+        assert (self.reader is not None and self.writer is not None)
 
         self.writer.write(payload)
         await wait_for(self.writer.drain(), self.timeout, 'Write timeout')

@@ -1,7 +1,8 @@
+from typing import List, Union, Type
 from functools import partial, partialmethod
 from enum import Enum
 
-from .fields import Enum as EnumField
+from .fields import Field, Enum as EnumField
 from .exceptions import MDCResponseError, NAKError
 
 
@@ -43,8 +44,14 @@ class CommandMcs(type):
 
 
 class Command(metaclass=CommandMcs):
-    CMD = None
-    SUBCMD = None
+    name: str
+    CMD: Union[int, Field]
+    SUBCMD: Union[int, None] = None
+    GET: bool
+    SET: bool
+    DATA: List[Union[Type[Enum], Field]]
+    RESPONSE_DATA: List[Union[Type[Enum], Field]]
+    RESPONSE_EXTRA: List[Union[Type[Enum], Field]]
 
     async def __call__(self, connection, display_id, data):
         data = self.parse_response(

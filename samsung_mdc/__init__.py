@@ -1,3 +1,4 @@
+from typing import Dict
 import inspect
 
 from .version import __version__  # noqa
@@ -7,7 +8,7 @@ from . import commands
 
 
 class MDC(MDCConnection):
-    _commands = {}
+    _commands: Dict[str, Command] = {}
 
     @classmethod
     def register_command(cls, command):
