@@ -13,11 +13,14 @@ def run(*args):
 
 
 def test_help():
-    for rv in [run('--help'), run()]:
-        assert rv.exit_code == 0, rv.output
-        assert re.search('^Usage:', rv.output, re.MULTILINE)
-        assert re.search('^Options:', rv.output, re.MULTILINE)
-        assert re.search('^Commands:', rv.output, re.MULTILINE)
+    # running without arguments returns exit code 2 (usage error)
+    # since click>=8.2.0 https://github.com/pallets/click/pull/1489
+    for rv, expect_exit_codes in [(run("--help"), (0,)), (run(), (0, 2))]:
+        assert rv.exit_code in expect_exit_codes, rv.output
+        assert re.search("^Usage:", rv.output, re.MULTILINE)
+        assert re.search("^Options:", rv.output, re.MULTILINE)
+        assert re.search("^Commands:", rv.output, re.MULTILINE)
+
 
 
 @pytest.mark.parametrize('command,display_id,req,req_data,resp,resp_data', [

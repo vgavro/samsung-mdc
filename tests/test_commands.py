@@ -3,6 +3,12 @@ import pytest
 from samsung_mdc import MDC, commands
 
 
+_SET_CONTENT_DOWNLOAD_URLS = [
+    "http://192.168.1.100:6868/content.json",
+    "http://10.0.0.5:8080/content?id=abc123&content_type=ImageContent"
+]
+
+
 @pytest.mark.parametrize('command,display_id,req,req_data,resp,resp_data', [
     [
         'power', 0,
@@ -29,20 +35,14 @@ from samsung_mdc import MDC, commands
         ['ssid', 'passwd'], bytes([0, 4]) + b'ssid' + bytes([1, 6]) + b'passwd',
         ['ssid', 'passwd'], bytes([0, 4]) + b'ssid' + bytes([1, 6]) + b'passwd',
     ],
+] + [
     [
-        'set_content_download', 0,
-        ['http://192.168.1.100:6868/content.json'],
-        b'http://192.168.1.100:6868/content.json',
-        ['http://192.168.1.100:6868/content.json'],
-        b'http://192.168.1.100:6868/content.json',
-    ],
-    [
-        'set_content_download', 0,
-        ['http://10.0.0.5:8080/content?id=abc123&content_type=ImageContent'],
-        b'http://10.0.0.5:8080/content?id=abc123&content_type=ImageContent',
-        ['http://10.0.0.5:8080/content?id=abc123&content_type=ImageContent'],
-        b'http://10.0.0.5:8080/content?id=abc123&content_type=ImageContent',
-    ],
+        "set_content_download", 0,
+        [url],
+        bytes([0x80, len(url)]) + url.encode(),
+        [url],
+        bytes([0x80, len(url)]) + url.encode(),
+    ] for url in _SET_CONTENT_DOWNLOAD_URLS
 ])
 @pytest.mark.asyncio
 async def test_command(
