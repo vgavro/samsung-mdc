@@ -340,6 +340,43 @@ class MAGICINFO_CONTENT_ORIENTATION(Command):
     DATA = [_COMMON.ORIENTATION_MODE_STATE]
 
 
+class SET_CONTENT_DOWNLOAD(Command):
+    """
+    2.1.C7.53 Set Content Download
+
+    ● Function
+    Control the device URL of content download.
+    The device will download content (images, schedules) from the specified URL.
+
+    ● Working Condition
+    - Depends on each model spec it will be supported or not
+    - Supports ePaper displays (e.g., EM32DX) and Smart Signage displays
+    - Device must have network connectivity to the content server
+
+    ● Set Content Download
+    Header: 0xAA
+    Command ID: 0xC7
+    Data Length: Variable
+    Sub CMD: 0x53
+    Data: Content URL (StrCoded with 0x80 data type indicator)
+
+    Content URL: ASCII code data for the content server address.
+    The URL should point to a content server that provides:
+    - Content manifest (content.json) with schedule and media references
+    - Media files (images) accessible via URLs in the manifest
+
+    Example: "http://192.168.1.100:6868/content.json"
+
+    Note: This command is used for mobile-to-display content transfer and
+    automated content management for digital signage.
+    """
+    CMD = 0xC7
+    SUBCMD = 0x53
+    GET, SET = False, True
+
+    DATA = [StrCoded(0x80, 'CONTENT_URL')]
+
+
 class MDC_CONNECTION(Command):
     """
     Note: Depends on the product specification,
