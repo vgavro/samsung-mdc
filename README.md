@@ -6,7 +6,7 @@ It allows you to control a variety of different sources (TV, Monitor) through th
 
 [MDC Protocol specification - v15.0 2020-11-06](https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf)
 
-* Implemented *83* commands
+* Implemented *84* commands
 * Easy to extend using simple declarative API - see [samsung_mdc/commands.py](https://github.com/vgavro/samsung-mdc/blob/master/samsung_mdc/commands.py)
 * Detailed [CLI](#usage) help and parameters validation
 * Run commands async on numerous targets (using asyncio)
@@ -112,6 +112,7 @@ Options:
 * [magicinfo_channel](#magicinfo_channel) `CHANNEL_NUMBER`
 * [magicinfo_server](#magicinfo_server) `[MAGICINFO_SERVER_URL]`
 * [magicinfo_content_orientation](#magicinfo_content_orientation) `[ORIENTATION_MODE_STATE]`
+* [set_content_download](#set_content_download) `CONTENT_URL`
 * [mdc_connection](#mdc_connection) `[MDC_CONNECTION_TYPE]`
 * [contrast](#contrast) `[CONTRAST]`
 * [brightness](#brightness) `[BRIGHTNESS]`
@@ -413,6 +414,47 @@ Usage: samsung-mdc [OPTIONS] TARGET magicinfo_content_orientation
 Data:
   ORIENTATION_MODE_STATE  LANDSCAPE_0 | PORTRAIT_270 | LANDSCAPE_180 |
                           PORTRAIT_90
+```
+#### set_content_download<a id="set_content_download"></a>
+```
+Usage: samsung-mdc [OPTIONS] TARGET set_content_download CONTENT_URL
+
+  Command: 0xC7 (Control Launcher)
+  Sub Command: 0x53 (Set Content Download)
+
+  Function:
+  Control the device URL of content download.
+  The device will download content (images, schedules) from the specified URL.
+
+  Working Condition:
+  - Depends on each model spec it will be supported or not
+  - Supports ePaper displays (e.g., EM32DX) and Smart Signage displays
+  - Device must have network connectivity to the content server
+
+  The URL should point to a content server that provides:
+  - Content manifest (content.json) with schedule and media references
+  - Media files (images) accessible via URLs in the manifest
+
+  Note: This command is used for mobile-to-display content transfer and
+  automated content management for digital signage.
+  Note: If using "Secured Protocol", you must provide the 4-digit PIN with --pin.
+
+Data:
+  CONTENT_URL  str  URL to content manifest (required)
+
+Examples:
+  # Send content from local server to display
+  samsung-mdc 192.168.1.200 set_content_download "http://192.168.1.100:6868/content.json"
+
+  # With PIN authentication for Secured Protocol
+  samsung-mdc --pin 1234 192.168.1.200 set_content_download \
+    "http://192.168.1.100:6868/content.json"
+
+  # With query parameters for content type
+  samsung-mdc 192.168.1.200 set_content_download \
+    "http://10.0.0.5:8080/content?id=abc123&content_type=ImageContent"
+
+See examples/content_download_server.py for a complete working example.
 ```
 #### mdc_connection<a id="mdc_connection"></a>
 ```
