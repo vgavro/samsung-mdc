@@ -1443,7 +1443,7 @@ class VIDEO_WALL_MODEL(Command):
     CMD = 0x89
     GET, SET = True, True
 
-    DATA = [VideoWallModel('MODEL'), Int('SERIAL', range(1, 255))]
+    DATA = [VideoWallModel('MODEL'), Int('SERIAL', range(1, 256))]
 
 
 class CONTENT_DOWNLOAD(Command):
