@@ -1444,3 +1444,47 @@ class VIDEO_WALL_MODEL(Command):
     GET, SET = True, True
 
     DATA = [VideoWallModel('MODEL'), Int('SERIAL', range(1, 256))]
+
+
+class CONTENT_DOWNLOAD(Command):
+    """
+    Set content download URL for emdx e-paper displays.
+    First two parameters are constants 83 and 128
+
+    Example: content_download(display_id,[83,128,
+        len('http://192.168.2.189:8000/content.json'),
+        'http://192.168.2.189:8000/content.json'])
+
+    Note: This commands passes the URL to a content.json file and not 
+    to an image directly. The json file should contain the required data
+    for the emdx to download and display the image.
+
+    Example Json file:
+
+    {"schedule":
+    [{
+        "start_date":"1970-01-01",
+        "stop_date":"2999-12-31",
+        "start_time":"00:00:00",
+        "contents":
+        [{
+            "image_url":"http://192.168.2.10:8000/image",
+            "file_id":"2B8AECD5-1FE5-4A0A-955E-BF52607A8873",
+            "file_path":"/home/owner/content/Downloads/vxtplayer/epaper/mobile/contents/2B8AECD5-1FE5-4A0A-955E-BF52607A8873/2B8AECD5-1FE5-4A0A-955E-BF52607A8873.png",
+            "duration":91326,"file_size":"5125303",
+            "file_name":"2B8AECD5-1FE5-4A0A-955E-BF52607A8873.png"
+        }]
+    }],
+    "name":"node-samsung-emdx",
+    "version":1,
+    "create_time":"2025-01-01 00:00:00",
+    "id":"2B8AECD5-1FE5-4A0A-955E-BF52607A8873",
+    "program_id":"com.samsung.ios.ePaper",
+    "content_type":"ImageContent",
+    "deploy_type":"MOBILE"}
+
+    """
+    CMD = 0xC7
+    GET, SET = False, True
+
+    DATA = [Int('83'),Int('128'),Int('URL_length', range(1, 255)),Str('URL')]
