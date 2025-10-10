@@ -718,7 +718,7 @@ class DEVICE_NAME(Command):
     Shows the information about entered device name.
     """
     CMD = 0x67
-    GET, SET = True, False
+    GET, SET = True, True
     DATA = [Str('DEVICE_NAME')]
 
 
