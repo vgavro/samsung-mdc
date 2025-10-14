@@ -138,7 +138,7 @@ Options:
 * [channel_change](#channel_change) `CHANGE_TO`
 * [volume_change](#volume_change) `CHANGE_TO`
 * [ticker](#ticker) `[ON_OFF START_TIME END_TIME POS_HORIZ POS_VERTI MOTION_ON_OFF MOTION_DIR MOTION_SPEED FONT_SIZE FOREGROUND_COLOR BACKGROUND_COLOR FOREGROUND_OPACITY BACKGROUND_OPACITY MESSAGE]`
-* [device_name](#device_name) `(DEVICE_NAME)`
+* [device_name](#device_name) `[DEVICE_NAME]`
 * [osd](#osd) `[OSD_ENABLED]`
 * [picture_mode](#picture_mode) `[PICTURE_MODE_STATE]`
 * [sound_mode](#sound_mode) `[SOUND_MODE_STATE]`
@@ -660,7 +660,7 @@ Data:
 ```
 #### device_name<a id="device_name"></a>
 ```
-Usage: samsung-mdc [OPTIONS] TARGET device_name
+Usage: samsung-mdc [OPTIONS] TARGET device_name [DEVICE_NAME]
 
   It reads the device name which user set up in network. Shows the information
   about entered device name.
