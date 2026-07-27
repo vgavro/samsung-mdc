@@ -16,7 +16,7 @@ requires += serial_requires
 test_requires = [
     'pytest',
     'pytest-asyncio',
-    'nest-asyncio',
+    'nest-asyncio2',
 ]
 
 setup(

@@ -1,14 +1,14 @@
 import re
 
 import pytest
-import nest_asyncio  # type: ignore[import-not-found]
+import nest_asyncio2  # type: ignore[import-not-found]
 from click.testing import CliRunner
 from samsung_mdc.cli import cli
 from samsung_mdc import MDC
 
 
 def run(*args):
-    nest_asyncio.apply()
+    nest_asyncio2.apply()
     return CliRunner().invoke(cli, args, prog_name='samsung-mdc')
 
 
