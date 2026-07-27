@@ -524,7 +524,8 @@ def asyncio_run(call, targets, verbose=False):
         loop = asyncio.get_running_loop()
         is_running_loop = True
     except RuntimeError:
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
         is_running_loop = False
 
     loop.run_until_complete(asyncio.wait([
