@@ -367,6 +367,615 @@ class SET_CONTENT_DOWNLOAD(Command):
     DATA = [StrCoded(0x80, 'CONTENT_URL')]
 
 
+class OOBE_STATUS(Command):
+    """Get/set whether the initial out-of-box setup has been completed."""
+    CMD = 0x1B
+    SUBCMD = 0xB1
+    GET, SET = True, True
+
+    DATA = [Bool('OOBE_COMPLETED')]
+
+
+class SLEEP_TIME(Command):
+    """Get/set the display sleep timer in minutes.
+
+    Samsung uses dedicated one-byte codes for the predefined 0, 5, 10, 20,
+    30, and 60 minute values. Other values use the custom two-byte minute
+    encoding under the same command.
+    """
+    CMD = 0xC6
+    SUBCMD = 0x81
+    GET, SET = True, True
+
+    DATA = [Int('MINUTES', range(0x10000))]
+
+    _PREDEFINED_MINUTES_TO_CODE = {
+        0: 0xF0,
+        5: 0x06,
+        10: 0x07,
+        20: 0x08,
+        30: 0x09,
+        60: 0x0A,
+    }
+    _PREDEFINED_CODE_TO_MINUTES = {
+        code: minutes for minutes, code in _PREDEFINED_MINUTES_TO_CODE.items()
+    }
+
+    @classmethod
+    def pack_payload_data(cls, data):
+        minutes = int(data[0])
+        if minutes in cls._PREDEFINED_MINUTES_TO_CODE:
+            return bytes([cls._PREDEFINED_MINUTES_TO_CODE[minutes]])
+        return bytes([0x00]) + minutes.to_bytes(2, byteorder='big')
+
+    @classmethod
+    def parse_response_data(cls, data):
+        value = data[0]
+        if value == 0x00:
+            return (int.from_bytes(data[1:3], byteorder='big'),)
+        return (cls._PREDEFINED_CODE_TO_MINUTES[value],)
+
+
+class DAILY_REFRESH(Command):
+    """Get/set the scheduled daily E-Paper refresh or request one immediately.
+
+    SET accepts ``HH:MM`` to update the daily schedule or ``NOW`` to request
+    an immediate refresh. Both operations use the same Samsung MDC command.
+    """
+    CMD = 0x1B
+    SUBCMD = 0xB0
+    GET, SET = True, True
+
+    DATA = [Str('REFRESH')]
+
+    @classmethod
+    def pack_payload_data(cls, data):
+        value = data[0]
+        if isinstance(value, str) and value.upper() == 'NOW':
+            return bytes([0x00, 0x00])
+
+        try:
+            hour, minute = (int(part) for part in str(value).split(':', 1))
+        except (TypeError, ValueError):
+            raise ValueError('REFRESH must be NOW or HH:MM')
+        if hour not in range(24) or minute not in range(60):
+            raise ValueError('REFRESH time must be in HH:MM format')
+        return bytes([0x80, 0x02, hour, minute])
+
+    @classmethod
+    def parse_response_data(cls, data):
+        cursor = 0
+        while cursor + 1 < len(data):
+            data_type = data[cursor]
+            length = data[cursor + 1]
+            value = data[cursor + 2:cursor + 2 + length]
+            if data_type == 0x81 and length == 4:
+                return (value[0], value[1], value[2], value[3])
+            if data_type == 0x80 and length == 2:
+                return (value[0], value[1])
+            cursor += 2 + length
+        raise ValueError('Daily refresh data not found')
+
+
+class PIN(Command):
+    """Get/set the display PIN used by the E-Paper application."""
+    CMD = 0x1B
+    SUBCMD = 0x87
+    GET, SET = True, True
+    DATA = [Str('PIN')]
+
+
+class EPAPER_BACKGROUND_COLOR(Command):
+    """Get/set the E-Paper background color."""
+    CMD = 0x21
+    SUBCMD = 0x90
+    GET, SET = True, True
+
+    class BACKGROUND_COLOR_STATE(IntEnum):
+        WHITE = 0x00
+        BLACK = 0x01
+        RED = 0x02
+        GREEN = 0x03
+        BLUE = 0x04
+        YELLOW = 0x05
+
+    DATA = [BACKGROUND_COLOR_STATE]
+
+    @classmethod
+    def pack_payload_data(cls, data):
+        return bytes([0x00, int(data[0])])
+
+    @classmethod
+    def parse_response_data(cls, data):
+        return (cls.BACKGROUND_COLOR_STATE(data[1]),)
+
+
+class EPAPER_BRIGHTNESS(Command):
+    """
+    Get/Set the E-Paper display brightness.
+
+    Brightness ranges from -5 to 5. Negative values are encoded as signed
+    one-byte values (0xFB through 0xFF).
+    """
+    CMD = 0x21
+    SUBCMD = 0x4F
+    GET, SET = True, True
+
+    DATA = [Int('BRIGHTNESS', range(-5, 6), signed=True)]
+
+
+class EPAPER_GAMMA(Command):
+    """
+    Get/Set the E-Paper display gamma.
+
+    Gamma ranges from -3 to 3. Negative values use Samsung's
+    offset-from-16 one-byte encoding.
+    """
+    CMD = 0x96
+    GET, SET = True, True
+
+    DATA = [Int('GAMMA', range(-3, 4))]
+
+    @classmethod
+    def pack_payload_data(cls, data):
+        value = data[0]
+        return bytes([value if value >= 0 else 16 - value])
+
+    @classmethod
+    def parse_response_data(cls, data):
+        value = data[0]
+        return (value if value <= 16 else 16 - value,)
+
+
+class BATTERY(Command):
+    """Get battery state or get/set the battery warning state.
+
+    GET returns the warning state, battery percentage, and current power
+    source. SET updates only the battery warning flag.
+    """
+    CMD = 0x1B
+    SUBCMD = 0x73
+    GET, SET = True, True
+    DATA = [Bool('BATTERY_WARNING_ENABLED')]
+
+    class POWER_SOURCE(IntEnum):
+        NONE = 0x00
+        AC = 0x01
+        USB = 0x02
+        WIRELESS = 0x03
+
+    @classmethod
+    def pack_payload_data(cls, data):
+        return bytes([0x00, int(data[0])])
+
+    @classmethod
+    def parse_response_data(cls, data):
+        if len(data) >= 6:
+            source = next(
+                (item for item in cls.POWER_SOURCE if item.value == data[5]),
+                cls.POWER_SOURCE.NONE,
+            )
+            return (data[1] == 0x01, data[3], source)
+        return (data[1] == 0x01,)
+
+
+class USB_LOCK(Command):
+    """Get/set whether USB access is locked."""
+    CMD = 0x1B
+    SUBCMD = 0x75
+    GET, SET = True, True
+    DATA = [Bool('USB_LOCKED')]
+
+    @classmethod
+    def pack_payload_data(cls, data):
+        return bytes([0x00, int(data[0])])
+
+    @classmethod
+    def parse_response_data(cls, data):
+        return (data[1] == 0x01,)
+
+
+class SOFTWARE_UPDATE(Command):
+    """Start the display software update operation."""
+    CMD = 0x1B
+    SUBCMD = 0x60
+    GET, SET = False, True
+    DATA = []
+
+    async def __call__(self, connection, display_id, data=b''):
+        response = self.parse_response(
+            await connection.send((self.CMD, self.SUBCMD), display_id, bytes([0x11]))
+        )
+        return (response[0] == 0x11,)
+
+
+class SOFTWARE_UPDATE_PROGRESS(Command):
+    """Get the current software update progress value."""
+    CMD = 0x1B
+    SUBCMD = 0x61
+    GET, SET = True, False
+    DATA = []
+
+    @classmethod
+    def parse_response_data(cls, data):
+        return (data[1],)
+
+
+class SOFTWARE_UPDATE_RESULT(Command):
+    """Get the textual result of the most recent software update."""
+    CMD = 0x1B
+    SUBCMD = 0x62
+    GET, SET = True, False
+    DATA = []
+
+    @classmethod
+    def parse_response_data(cls, data):
+        return (data[1:].decode(),)
+
+
+class USB_PLAYER_SLIDE_SHOW(Command):
+    """Get/set USB-player slideshow enablement or its interval.
+
+    SET accepts ``ON`` or ``OFF`` for slideshow enablement, or an integer
+    number of seconds for the slideshow interval. Samsung encodes both setter
+    operations under the same MDC command.
+    """
+    CMD = 0xC7
+    SUBCMD = 0x50
+    GET, SET = True, True
+    DATA = [Str('SETTING')]
+
+    @classmethod
+    def pack_payload_data(cls, data):
+        value = data[0]
+        if isinstance(value, str):
+            normalized = value.upper()
+            if normalized == 'ON':
+                return bytes([0x00, 0x01])
+            if normalized == 'OFF':
+                return bytes([0x00, 0x00])
+
+        try:
+            interval = int(value)
+        except (TypeError, ValueError):
+            raise ValueError('SETTING must be ON, OFF, or interval seconds')
+        if interval < 0:
+            raise ValueError('Slideshow interval must not be negative')
+        minutes = min(interval // 60, 99)
+        seconds = min(interval % 60, 59)
+        return bytes([0x80, 0x02, minutes, seconds])
+
+    @classmethod
+    def parse_response_data(cls, data):
+        enabled = data[1] == 0x01
+        if len(data) >= 6:
+            return (enabled, data[4] * 60 + data[5])
+        return (enabled,)
+
+
+class CUSTOM_APP_PLAYER_INSTALL_UNINSTALL(Command):
+    """Install or uninstall the custom application player."""
+    CMD = 0xC7
+    SUBCMD = 0x51
+    GET, SET = False, True
+
+    class OPERATION(IntEnum):
+        UNINSTALL = 0x00
+        INSTALL = 0x01
+
+    DATA = [OPERATION]
+
+    @classmethod
+    def pack_payload_data(cls, data):
+        return bytes([0x00, int(data[0])])
+
+    @classmethod
+    def parse_response_data(cls, data):
+        return (data[1] == 0x01,)
+
+
+class CUSTOM_APP_PLAYER_CONFIG(Command):
+    """Get/set custom application player developer configuration."""
+    CMD = 0xC7
+    SUBCMD = 0x52
+    GET, SET = True, True
+
+    class DEVELOPER_MODE(IntEnum):
+        OFF = 0x00
+        ON = 0x01
+
+    class TIMEOUT(IntEnum):
+        SECONDS_30 = 30
+        SECONDS_60 = 60
+        SECONDS_90 = 90
+        SECONDS_120 = 120
+        SECONDS_150 = 150
+        SECONDS_180 = 180
+        SECONDS_210 = 210
+        SECONDS_240 = 240
+        SECONDS_270 = 270
+        SECONDS_300 = 300
+
+    DATA = [TIMEOUT, DEVELOPER_MODE, Str('PC_ADDRESS')]
+
+    @classmethod
+    def pack_payload_data(cls, data):
+        timeout, developer_mode, pc_address = data
+        payload = bytes([0x00, int(developer_mode), 0x80, 0x02])
+        payload += int(timeout).to_bytes(2, byteorder='big')
+        if pc_address:
+            encoded = pc_address.encode()
+            payload += bytes([0x81, len(encoded)]) + encoded
+        return payload
+
+    @classmethod
+    def parse_response_data(cls, data):
+        developer_mode = cls.DEVELOPER_MODE.ON if data[1] == 0x01 else cls.DEVELOPER_MODE.OFF
+        timeout = cls.TIMEOUT.SECONDS_120
+        pc_address = ''
+        cursor = 2
+        while cursor + 1 < len(data):
+            data_type = data[cursor]
+            length = data[cursor + 1]
+            value = data[cursor + 2:cursor + 2 + length]
+            if data_type == 0x80 and length == 2:
+                timeout = cls.TIMEOUT(int.from_bytes(value, byteorder='big'))
+            elif data_type == 0x81:
+                pc_address = value.decode()
+            cursor += 2 + length
+        return (timeout, developer_mode, pc_address)
+
+
+class GET_THUMBNAIL(Command):
+    """Request a thumbnail for the supplied URL and return the resulting value."""
+    CMD = 0xC7
+    SUBCMD = 0x54
+    GET, SET = False, True
+    DATA = [Str('THUMBNAIL_URL')]
+
+    @classmethod
+    def parse_response_data(cls, data):
+        return (data.decode(),)
+
+
+class USB_PLAYER_FUNCTION(Command):
+    """Invoke previous/next navigation in the USB player."""
+    CMD = 0xC7
+    SUBCMD = 0x60
+    GET, SET = False, True
+
+    class PLAYER_ACTION(IntEnum):
+        PREVIOUS = 0x00
+        NEXT = 0x01
+
+    DATA = [PLAYER_ACTION]
+    RESPONSE_DATA = [Str('RESULT')]
+
+
+class WIFI_ADDRESS(Command):
+    """Get the main Wi-Fi adapter MAC address."""
+    CMD = 0x1B
+    SUBCMD = 0x81
+    GET, SET = True, False
+    DATA = []
+
+    @classmethod
+    def parse_response_data(cls, data):
+        value = data.decode()
+        return (':'.join(value[i:i + 2] for i in range(0, len(value), 2)),)
+
+
+class NETWORK_SETTING(Command):
+    """Get whether the active network connection is wired or Wi-Fi."""
+    CMD = 0x1B
+    SUBCMD = 0x8C
+    GET, SET = True, False
+    DATA = []
+
+    class NETWORK_TYPE(IntEnum):
+        WIRED = 0x00
+        WIFI = 0x01
+
+    @classmethod
+    def parse_response_data(cls, data):
+        return (cls.NETWORK_TYPE.WIRED if data[0] == 0 else cls.NETWORK_TYPE.WIFI,)
+
+
+class POE_PLUS(Command):
+    """Get/set the current PoE+ enabled state."""
+    CMD = 0x1B
+    SUBCMD = 0x71
+    GET, SET = True, True
+    DATA = [Bool('POE_PLUS_ENABLED')]
+
+    @classmethod
+    def parse_response_data(cls, data):
+        return (data[0] != 0,)
+
+
+class TURN_ON_BLE(Command):
+    """Turn on BLE for the requested timeout in milliseconds."""
+    CMD = 0x22
+    SUBCMD = 0x10
+    GET, SET = False, True
+    DATA = [Int('TIME_MILLISECONDS')]
+
+    @classmethod
+    def pack_payload_data(cls, data):
+        timeout = int(data[0]).to_bytes(2, byteorder='big')
+        value = bytes([0xD2]) + timeout
+        return bytes([0x00, len(value)]) + value
+
+    @classmethod
+    def parse_response_data(cls, data):
+        return ('',)
+
+
+class NTP_SETTINGS(Command):
+    """Get/set NTP activation, server, and timezone settings."""
+    CMD = 0xCA
+    SUBCMD = 0x40
+    GET, SET = True, True
+    DATA = [Bool('ACTIVE'), Str('SERVER'), Str('TIMEZONE')]
+
+    @classmethod
+    def pack_payload_data(cls, data):
+        active, server, timezone = data
+        payload = bytes([0x00, int(active)])
+        if server and not server.isspace():
+            encoded = server.encode()
+            payload += bytes([0x80, len(encoded)]) + encoded
+        if timezone and not timezone.isspace():
+            encoded = timezone.encode()
+            payload += bytes([0x81, len(encoded)]) + encoded
+        return payload
+
+    @classmethod
+    def parse_response_data(cls, data):
+        active = data[1] == 0x01
+        server = ''
+        timezone = ''
+        cursor = 2
+        while cursor + 1 < len(data):
+            data_type = data[cursor]
+            length = data[cursor + 1]
+            value = data[cursor + 2:cursor + 2 + length]
+            if data_type == 0x80:
+                server = value.decode()
+            elif data_type == 0x81:
+                timezone = value.decode()
+            cursor += 2 + length
+        if server == 'Null':
+            server = ''
+        return (active, server, timezone)
+
+
+class SUPPORT_FEATURE(Command):
+    """Get E-Paper feature flags interpreted by the Samsung application.
+
+    PoE support is hardcoded to false in the official ePaper app; not sure if that's the
+    same as POE+ or not, but you clearly can't rely on it to tell you if POE+ is available.
+    """
+    CMD = 0xCB
+    GET, SET = True, False
+    DATA = []
+
+    class REFRESH_TYPE(IntEnum):
+        CONTENTS_REFRESH_ONLY = 0x00
+        CONTENTS_REFRESH_BY_REFRESH = 0x01
+
+    @classmethod
+    def parse_response_data(cls, data):
+        feature = data[1]
+        low_power_wifi_supported = (feature & 0x01) != 0
+        refresh_bits = (feature >> 5) & 0x03
+        refresh_type = (
+            cls.REFRESH_TYPE.CONTENTS_REFRESH_BY_REFRESH
+            if refresh_bits == 0x01
+            else cls.REFRESH_TYPE.CONTENTS_REFRESH_ONLY
+        )
+        return (low_power_wifi_supported, False, refresh_type)
+
+
+class DISPLAY_RESOLUTION(Command):
+    """Get the display width and height in pixels."""
+    CMD = 0x1B
+    SUBCMD = 0x13
+    GET, SET = True, False
+    DATA = []
+
+    @classmethod
+    def parse_response_data(cls, data):
+        if len(data) != 6 or data[1] != 0x04:
+            raise ValueError('Unexpected display resolution response')
+        width = int.from_bytes(data[2:4], byteorder='big')
+        height = int.from_bytes(data[4:6], byteorder='big')
+        return (width, height)
+
+
+class _LARGE_FRAME_D2_COMMAND(Command):
+    """Base class for E-Paper D2 commands using 16-bit MDC frame lengths."""
+    CMD = 0xD2
+    DATA_LENGTH_LARGE = True
+    RESPONSE_LENGTH_LARGE = True
+    DATA = []
+
+    @classmethod
+    def pack_payload_data(cls, data):
+        return bytes(data)
+
+    @classmethod
+    def parse_response_data(cls, data):
+        return (bytes(data),)
+
+
+class GET_CONTACT_SAMSUNG(_LARGE_FRAME_D2_COMMAND):
+    """Get Samsung device/contact information encoded as D2 TLV data."""
+    SUBCMD = 0x00
+    GET, SET = True, False
+
+
+class FACTORY_MENU(_LARGE_FRAME_D2_COMMAND):
+    """Access factory-menu operations."""
+    SUBCMD = 0x10
+    GET, SET = True, True
+
+
+class DOWNLOAD_FILE_CERT(_LARGE_FRAME_D2_COMMAND):
+    """Send certificate download data."""
+    SUBCMD = 0x20
+    GET, SET = False, True
+
+
+class NETWORK_CERT_LIST(_LARGE_FRAME_D2_COMMAND):
+    """Get the network certificate list."""
+    SUBCMD = 0x22
+    GET, SET = True, False
+
+
+class APP_CERT_LIST(_LARGE_FRAME_D2_COMMAND):
+    """Get the application certificate list."""
+    SUBCMD = 0x23
+    GET, SET = True, False
+
+
+class TERM_CONDITION(_LARGE_FRAME_D2_COMMAND):
+    """Get/set terms-and-conditions data."""
+    SUBCMD = 0x70
+    GET, SET = True, True
+
+
+class NTP_TIMEZONES(_LARGE_FRAME_D2_COMMAND):
+    """Get the display's supported NTP timezone names."""
+    SUBCMD = 0x71
+    GET, SET = True, False
+
+
+class LOW_POWER_WIFI(_LARGE_FRAME_D2_COMMAND):
+    """Get low-power Wi-Fi adapter network and firmware information."""
+    SUBCMD = 0xB0
+    GET, SET = True, False
+
+    @classmethod
+    def parse_response_data(cls, data):
+        status = data[:3]
+        values = {}
+        cursor = 3
+        while cursor < len(data):
+            field = int.from_bytes(data[cursor:cursor + 2], byteorder='big')
+            length = data[cursor + 2]
+            cursor += 3
+            values[field] = data[cursor:cursor + length].decode()
+            cursor += length
+
+        return (
+            status,
+            values.get(0x8000),
+            values.get(0x8001),
+            values.get(0x8002),
+            values.get(0x8009),
+        )
+
 class MDC_CONNECTION(Command):
     """
     Note: Depends on the product specification,

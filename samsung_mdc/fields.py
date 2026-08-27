@@ -21,19 +21,26 @@ class Field:
 class Int(Field):
     range: Optional[range] = None
 
-    def __init__(self, name=None, range=None, length=1, byteorder='big'):
+    def __init__(self, name=None, range=None, length=1, byteorder='big',
+                 signed=False):
         super().__init__(name)
         self.range = range
         self.length = length
         self.byteorder = byteorder
+        self.signed = signed
 
     def pack(self, value):
         if self.range and value not in self.range:
             raise ValueError('Field not in range', self.name, self.range)
-        return int(value).to_bytes(self.length, byteorder=self.byteorder)
+        return int(value).to_bytes(
+            self.length, byteorder=self.byteorder, signed=self.signed)
 
     def parse(self, data):
-        return int.from_bytes(data[:self.length], self.byteorder), self.length
+        return (
+            int.from_bytes(
+                data[:self.length], self.byteorder, signed=self.signed),
+            self.length,
+        )
 
 
 class Bool(Int):
@@ -131,12 +138,11 @@ class DateTime(Field):
                 data[4], data[0],  # month, day
                 time.hour, time.minute, time.second
             ), 8
-
         time = parse_mdc_time(data[6], data[1], data[2])
         return datetime(
-                int.from_bytes(data[4:6], 'big'),  # year
-                data[3], data[0],  # month, day
-                time.hour, time.minute, time.second
+            int.from_bytes(data[4:6], 'big'),  # year
+            data[3], data[0],  # month, day
+            time.hour, time.minute, time.second
         ), 7
 
     def pack(self, value):
