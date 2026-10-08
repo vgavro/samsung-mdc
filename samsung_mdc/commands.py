@@ -1444,3 +1444,33 @@ class VIDEO_WALL_MODEL(Command):
     GET, SET = True, True
 
     DATA = [VideoWallModel('MODEL'), Int('SERIAL', range(1, 256))]
+
+
+class BRIGHTNESS_SENSOR(Command):
+    """
+    Get/Set automatic brightness
+    """
+    CMD = 0x86
+    GET, SET = True, True
+
+    class BRIGHTNESS_SENSOR_STATE(IntEnum):
+        OFF = 0x00
+        ON = 0x01
+
+    DATA = [BRIGHTNESS_SENSOR_STATE]
+    
+
+class DYNAMIC_CONTRAST(Command):
+    """
+    Get/Set dynamic contrast
+    """
+    CMD = 0x87
+    GET, SET = True, True
+
+    class DYNAMIC_CONTRAST_STATE(IntEnum):
+        OFF = 0x00
+        LOW = 0x01
+        MED = 0x02
+        HIGH = 0x03
+
+    DATA = [DYNAMIC_CONTRAST_STATE]
